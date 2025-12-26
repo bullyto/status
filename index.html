@@ -75,8 +75,7 @@
           <div style="margin-top:10px">
             <label>Image (chemin local dans le dépôt status)</label>
             <input id="image" placeholder="images/panne.png" />
-            <div class="small" style="margin-top:6px">Ex : <code class="inline">images/meteo.png</code> (dans ton dépôt <b>bullyto/status</b>).</div>
-          </div>
+</div>
 
           <div class="hr"></div>
 
@@ -87,11 +86,9 @@
           </div>
 
           <div class="hr"></div>
-
-          <div class="small" style="margin-bottom:8px">Publication GitHub (optionnel)</div>
-          <div class="row">
+<div class="row">
             <div>
-              <label>GitHub owner / repo</label>
+              <label>Dépôt GitHub</label>
               <div style="display:flex;gap:10px">
                 <input id="ghOwner" placeholder="bullyto" />
                 <input id="ghRepo" placeholder="status" />
@@ -107,10 +104,9 @@
             <input id="ghPath" placeholder="status.json" />
           </div>
           <div style="margin-top:10px">
-            <label>Token GitHub (PAT) — stocké seulement sur ton téléphone</label>
+            <label>Token GitHub</label>
             <input id="ghToken" type="password" placeholder="github_pat_..." autocomplete="off" />
-            <div class="small" style="margin-top:6px">Ne le mets pas dans le code du site. Ici il reste local (localStorage).</div>
-          </div>
+</div>
 
           <div class="btns" style="margin-top:12px">
             <button class="secondary" id="btnSaveToken">Enregistrer le token</button>
@@ -121,11 +117,7 @@
           <p class="note" style="margin-top:12px">
             Si <code class="inline">active</code> est <b>true</b>, tes sites clients afficheront le pop-up à chaque chargement (les clients peuvent fermer, mais ça revient tant que c'est actif).
           </p>
-
-          <p class="note">
-            URL de ton status actuel : <code class="inline">https://bullyto.github.io/status/status.json</code>
-          </p>
-        </div>
+</div>
       </section>
 
       <section class="card preview">
@@ -141,13 +133,7 @@
           </div>
           <div style="margin-top:10px; font-weight:900; font-size:18px" id="pTitle">—</div>
           <div style="margin-top:6px; color:rgba(234,242,255,.82); line-height:1.35" id="pMsg">—</div>
-
-          <div class="hr"></div>
-          <p class="note">
-            <b>Astuce :</b> remplace tes images dans le dépôt <code class="inline">bullyto/status</code> :<br>
-            <code class="inline">images/panne.png</code> • <code class="inline">images/incident.png</code> • <code class="inline">images/meteo.png</code> • <code class="inline">images/securite.png</code>
-          </p>
-        </div>
+</div>
       </section>
     </div>
   </div>
