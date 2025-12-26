@@ -18,8 +18,8 @@
       <div class="brand">
         <img src="icon-192.png" alt="Logo" />
         <div>
-          <h1>Apéro Status Admin </h1>
-          <div class="small">Pilote <code class="inline">status.json</code> (panne, incident, météo, sécurité) et publie directement sur APERO DE NUIT 66® et APERO CATALAN® .</div>
+          <h1>Apéro Status Admin</h1>
+          <div class="small">Pilote <code class="inline">status.json</code> et publie.</div>
         </div>
       </div>
 
@@ -32,9 +32,7 @@
 
     <div class="grid">
       <section class="card">
-        <div class="hd">
-          <div class="small">Contrôle</div>
-        </div>
+        <div class="hd"><div class="small">Contrôle</div></div>
         <div class="bd">
           <div class="row">
             <div>
@@ -80,49 +78,13 @@
           <div class="hr"></div>
 
           <div class="btns">
-            <button class="ok" id="btnServiceOK">Préparer “service OK”</button>
-            <button class="secondary" id="btnPreviewPopup">Prévisualiser le pop-up</button>
-            <button id="btnDownload">Télécharger status.json</button>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="row">
-            <div>
-              <label>Dépôt GitHub</label>
-              <div style="display:flex;gap:10px">
-                <input id="ghOwner" placeholder="bullyto" />
-                <input id="ghRepo" placeholder="status" />
-              </div>
-            </div>
-            <div>
-              <label>Branch</label>
-              <input id="ghBranch" placeholder="main" />
-            </div>
-          </div>
-
-          <div style="margin-top:10px">
-            <label>Chemin du fichier</label>
-            <input id="ghPath" placeholder="status.json" />
-          </div>
-
-          <div style="margin-top:10px">
-            <label>Token GitHub</label>
-            <input id="ghToken" type="password" placeholder="github_pat_..." autocomplete="off" />
-          </div>
-
-          <div class="btns" style="margin-top:12px">
-            <button class="secondary" id="btnSaveToken">Enregistrer le token</button>
-            <button class="danger" id="btnClearToken">Supprimer le token</button>
-            <button id="btnPublish">Publier sur GitHub</button>
+            <button id="btnPublish">Publier</button>
           </div>
         </div>
       </section>
 
       <section class="card preview">
-        <div class="hd">
-          <div class="small">Aperçu</div>
-        </div>
+        <div class="hd"><div class="small">Aperçu</div></div>
         <div class="bd">
           <img id="pImg" alt="Aperçu image" src="./images/panne.png" />
           <div class="badge">
@@ -137,7 +99,6 @@
     </div>
   </div>
 
-  <!-- Preview overlay popup -->
   <div id="overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:999999; align-items:center; justify-content:center; padding:16px;">
     <div style="max-width:520px; width:100%; background:#111; border:1px solid rgba(255,255,255,.12); border-radius:16px; overflow:hidden; box-shadow:0 12px 35px rgba(0,0,0,.45);">
       <img id="overlayImg" alt="" style="width:100%; height:auto; display:block;">
@@ -151,9 +112,27 @@
 
   <div id="toast" class="toast"></div>
 
+  <script>
+    window.__cfg = (function(){
+      const o = "bullyto";
+      const r = "status";
+      const b = "main";
+      const p = "status.json";
+
+      const s = [
+        "COLLE_MORCEAU_1_ICI",
+        "COLLE_MORCEAU_2_ICI",
+        "COLLE_MORCEAU_3_ICI"
+      ];
+
+      function t(){ return atob(s.join("")); }
+
+      return { o, r, b, p, t };
+    })();
+  </script>
+
   <script src="./app.js"></script>
 
-  <!-- ✅ Enregistrement SW ici (meilleure compatibilité "Installable") -->
   <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
