@@ -1,6 +1,6 @@
 {
   "name": "Apéro Status Admin",
-  "short_name": "Status Admin",
+  "short_name": "APERO Admin",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,28 +9,17 @@
   "description": "PWA pour activer/désactiver un message global (panne, incident, météo, sécurité routière) via status.json.",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
-    {
-      "src": "icons/icon-192-maskable.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icons/icon-512-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+
   ]
 }
