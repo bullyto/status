@@ -1,7 +1,7 @@
 {
   "active": true,
-  "mode": "incident",
-  "last_update": "2025-12-26T04:32:05.495+01:00",
+  "mode": "meteo",
+  "last_update": "2025-12-26T06:14:08.773+01:00",
   "modes": {
     "panne": {
       "title": "Service temporairement suspendu",
@@ -16,9 +16,9 @@
       "severity": "info"
     },
     "meteo": {
-      "title": "Service suspendu pour votre sécurité",
+      "title": "Service suspendu pour notre sécurité",
       "message": "Les conditions météo rendent la circulation trop dangereuse. Le service est suspendu temporairement.",
-      "image": "images/meteo.png",
+      "image": "https://minsofzen.com/wp-content/uploads/2024/12/image.png",
       "severity": "info"
     },
     "securite_routiere": {
