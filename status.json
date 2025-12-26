@@ -1,7 +1,7 @@
 {
-  "active": true,
-  "mode": "securite_routiere",
-  "last_update": "2025-12-26T06:36:31.307+01:00",
+  "active": false,
+  "mode": "none",
+  "last_update": "2025-12-26T06:55:00.190+01:00",
   "modes": {
     "panne": {
       "title": "Service temporairement suspendu",
