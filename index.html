@@ -127,11 +127,14 @@
             <div style="margin-top:10px">
               <label>Token GitHub</label>
               <input id="ghToken" type="password" autocomplete="off" />
+              <div class="small" style="opacity:.7;margin-top:6px">
+                Stockage local (localStorage) sur ce téléphone uniquement.
+              </div>
             </div>
 
             <div class="btns" style="margin-top:12px">
-              <button class="secondary" id="btnSaveToken">Enregistrer le token</button>
-              <button class="danger" id="btnClearToken">Supprimer le token</button>
+              <button class="secondary" id="btnSaveToken" type="button">Enregistrer le token</button>
+              <button class="danger" id="btnClearToken" type="button">Supprimer le token</button>
             </div>
           </div>
 
@@ -174,22 +177,57 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- 🔒 INJECTION TOKEN (TEST) : base64 morcelé → #ghToken + localStorage -->
+  <!-- ✅ Gestion Token en localStorage (sans aucune clé dans le code) -->
   <script>
   (function(){
-    const parts = [
-      "COLLE_B64_PART_1",
-      "COLLE_B64_PART_2",
-      "COLLE_B64_PART_3"
-    ];
-    try {
-      const token = atob(parts.join(""));
-      const input = document.getElementById("ghToken");
-      if (input) input.value = token;
-      localStorage.setItem("gh_token", token);
-    } catch(e){
-      console.error("Token decode failed", e);
+    const LS_KEY = "gh_token";
+
+    function showToast(msg){
+      const el = document.getElementById("toast");
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove("show"), 2200);
     }
+
+    function getTokenInput(){
+      return document.getElementById("ghToken");
+    }
+
+    // 1) Au chargement : on remplit le champ si un token existe
+    window.addEventListener("DOMContentLoaded", () => {
+      const input = getTokenInput();
+      if (!input) return;
+
+      const saved = localStorage.getItem(LS_KEY);
+      if (saved) input.value = saved;
+
+      // 2) Bouton enregistrer
+      const btnSave = document.getElementById("btnSaveToken");
+      if (btnSave) {
+        btnSave.addEventListener("click", () => {
+          const val = (input.value || "").trim();
+          if (!val) {
+            localStorage.removeItem(LS_KEY);
+            showToast("Token vide : rien enregistré.");
+            return;
+          }
+          localStorage.setItem(LS_KEY, val);
+          showToast("Token enregistré sur ce téléphone ✅");
+        });
+      }
+
+      // 3) Bouton supprimer
+      const btnClear = document.getElementById("btnClearToken");
+      if (btnClear) {
+        btnClear.addEventListener("click", () => {
+          localStorage.removeItem(LS_KEY);
+          input.value = "";
+          showToast("Token supprimé ✅");
+        });
+      }
+    });
   })();
   </script>
 
