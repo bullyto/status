@@ -11,6 +11,7 @@ function nowIsoParisish(){
 
 function toast(msg){
   const t = $("toast");
+  if(!t) return;
   t.textContent = msg;
   t.style.display = "block";
   clearTimeout(window.__toast);
@@ -74,19 +75,7 @@ function buildUpdatedStatus(current){
   return data;
 }
 
-function downloadJson(filename, obj){
-  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(a.href);
-}
-
 function b64encodeUtf8(str){
-  // base64 for UTF-8
   return btoa(unescape(encodeURIComponent(str)));
 }
 
@@ -103,7 +92,7 @@ async function githubGetFileMeta({owner, repo, path, branch, token}){
     const t = await r.text();
     throw new Error(`GitHub GET meta failed (${r.status}): ${t}`);
   }
-  return await r.json(); // contains sha
+  return await r.json();
 }
 
 async function githubPutFile({owner, repo, path, branch, token, contentText, sha}){
@@ -134,23 +123,13 @@ async function githubPutFile({owner, repo, path, branch, token, contentText, sha
 }
 
 async function main(){
-  // PWA install
-  if ("serviceWorker" in navigator){
-    try { await navigator.serviceWorker.register("./sw.js"); } catch {}
-  }
-
-  // defaults
-  $("ghOwner").value = localStorage.getItem("gh_owner") || "bullyto";
-  $("ghRepo").value = localStorage.getItem("gh_repo") || "status";
-  $("ghBranch").value = localStorage.getItem("gh_branch") || "main";
-  $("ghPath").value = localStorage.getItem("gh_path") || "status.json";
-  $("ghToken").value = localStorage.getItem("gh_token") || "";
-
   let current = await loadStatus();
 
-  // fill mode options
   const modes = Object.keys(current.modes || {});
-  $("mode").innerHTML = `<option value="none">Aucun (service OK)</option>` + modes.map(m => `<option value="${m}">${m}</option>`).join("");
+  $("mode").innerHTML =
+    `<option value="none">Aucun (service OK)</option>` +
+    modes.map(m => `<option value="${m}">${m}</option>`).join("");
+
   setFormFromStatus(current);
 
   $("active").addEventListener("change", ()=> renderPreview(buildUpdatedStatus(current)));
@@ -167,86 +146,36 @@ async function main(){
     $(id).addEventListener("input", ()=> renderPreview(buildUpdatedStatus(current)));
   });
 
-  $("btnDownload").addEventListener("click", ()=>{
-    const updated = buildUpdatedStatus(current);
-    downloadJson("status.json", updated);
-    toast("status.json téléchargé.");
-  });
-
-  $("btnServiceOK").addEventListener("click", ()=>{
-    $("active").value = "false";
-    $("mode").value = "none";
-    $("title").value = "";
-    $("message").value = "";
-    $("image").value = "";
-    $("severity").value = "info";
-    renderPreview(buildUpdatedStatus(current));
-    toast("Mode 'service OK' prêt.");
-  });
-
-  $("btnPreviewPopup").addEventListener("click", ()=>{
-    const data = buildUpdatedStatus(current);
-    if (!data.active){ toast("Active d'abord le statut."); return; }
-    const cfg = data.modes?.[data.mode];
-    if (!cfg){ toast("Mode invalide."); return; }
-
-    $("overlayImg").src = cfg.image || "images/panne.png";
-    $("overlayTitle").textContent = cfg.title || "Information";
-    $("overlayMsg").textContent = cfg.message || "";
-    $("overlay").style.display = "flex";
-  });
-
   $("overlayBtn").addEventListener("click", ()=> $("overlay").style.display = "none");
   $("overlay").addEventListener("click", (e)=> { if (e.target === $("overlay")) $("overlay").style.display = "none"; });
 
-  // token persistence
-  $("btnSaveToken").addEventListener("click", ()=>{
-    const token = $("ghToken").value.trim();
-    if(!token){ toast("Token vide."); return; }
-    localStorage.setItem("gh_token", token);
-    toast("Token enregistré sur ce téléphone.");
-  });
-  $("btnClearToken").addEventListener("click", ()=>{
-    localStorage.removeItem("gh_token");
-    $("ghToken").value = "";
-    toast("Token supprimé.");
-  });
-
-  // persist repo settings
-  ["ghOwner","ghRepo","ghBranch","ghPath"].forEach(id => {
-    $(id).addEventListener("change", ()=>{
-      localStorage.setItem(id.replace("gh","gh_").toLowerCase(), $(id).value.trim());
-    });
-  });
-
   $("btnPublish").addEventListener("click", async ()=>{
     try{
-      const owner = $("ghOwner").value.trim();
-      const repo = $("ghRepo").value.trim();
-      const branch = $("ghBranch").value.trim() || "main";
-      const path = $("ghPath").value.trim() || "status.json";
-      const token = $("ghToken").value.trim() || localStorage.getItem("gh_token") || "";
+      const cfg = window.__cfg || {};
+      const owner  = (cfg.o || "").trim();
+      const repo   = (cfg.r || "").trim();
+      const branch = (cfg.b || "main").trim();
+      const path   = (cfg.p || "status.json").trim();
+      const token  = (typeof cfg.t === "function" ? cfg.t() : "").trim();
 
-      if(!owner || !repo || !path) { toast("Owner/repo/path manquants."); return; }
-      if(!token){ toast("Ajoute ton token GitHub."); return; }
+      if(!owner || !repo || !path){ toast("Config manquante."); return; }
+      if(!token){ toast("Token manquant."); return; }
 
-      // get sha of existing file (needed for update)
-      toast("Lecture du fichier sur GitHub...");
+      toast("Lecture GitHub...");
       const meta = await githubGetFileMeta({owner, repo, path, branch, token});
       const sha = meta.sha;
 
       const updated = buildUpdatedStatus(current);
       const contentText = JSON.stringify(updated, null, 2);
 
-      toast("Publication sur GitHub...");
+      toast("Publication...");
       await githubPutFile({owner, repo, path, branch, token, contentText, sha});
 
-      // refresh local current
       current = updated;
-      toast("Publié ✅ (GitHub Pages se met à jour).");
+      toast("Publié ✅");
     } catch(err){
       console.error(err);
-      toast("Erreur GitHub : " + (err?.message || err));
+      toast("Erreur : " + (err?.message || err));
     }
   });
 }
