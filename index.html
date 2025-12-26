@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./styles.css" />
 
   <style>
-    /* On garde TOUT pour que app.js fonctionne, mais on masque l’affichage */
+    /* On garde TOUT pour que app.js fonctionne */
     .ui-hide { display:none !important; }
 
     /* Cache les boutons pré-programmés */
@@ -20,8 +20,12 @@
     #btnPreviewPopup,
     #btnDownload { display:none !important; }
 
-    /* Cache toute la zone GitHub (inputs toujours présents) */
-    .gh-zone { display:none !important; }
+    /* Zone GitHub : masquée par défaut, affichable via bouton */
+    .gh-zone { display:none; }
+    .gh-zone.is-open { display:block; }
+
+    /* Petit texte aide */
+    .hint { font-size:12px; opacity:.72; margin-top:6px; line-height:1.25; }
   </style>
 </head>
 
@@ -103,8 +107,13 @@
 
           <div class="hr"></div>
 
-          <!-- Zone GitHub (présente mais cachée, app.js OK) -->
-          <div class="gh-zone">
+          <!-- ✅ Bouton pour afficher/masquer les paramètres GitHub -->
+          <div class="btns" style="margin-top:12px">
+            <button type="button" class="secondary" id="btnToggleGh">Paramètres GitHub</button>
+          </div>
+
+          <!-- Zone GitHub (désormais accessible via bouton) -->
+          <div class="gh-zone" style="margin-top:12px">
             <div class="row">
               <div>
                 <label>Dépôt GitHub</label>
@@ -126,9 +135,10 @@
 
             <div style="margin-top:10px">
               <label>Token GitHub</label>
-              <input id="ghToken" type="password" autocomplete="off" />
-              <div class="small" style="opacity:.7;margin-top:6px">
-                Stockage local (localStorage) sur ce téléphone uniquement.
+              <input id="ghToken" type="password" autocomplete="off" placeholder="ghp_..." />
+              <div class="hint">
+                Stocké en local sur ce téléphone (localStorage) avec expiration automatique (6 mois).
+                <br><span id="tokenStatus" style="opacity:.85">—</span>
               </div>
             </div>
 
@@ -177,10 +187,11 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- ✅ Gestion Token en localStorage (sans aucune clé dans le code) -->
+  <!-- ✅ Gestion Token localStorage avec expiration 6 mois + toggle UI + preview hide si inactive -->
   <script>
   (function(){
-    const LS_KEY = "gh_token";
+    const LS_KEY = "gh_token_v1";       // { token: "...", exp: 1234567890 }
+    const SIX_MONTHS_MS = 1000 * 60 * 60 * 24 * 30 * 6;
 
     function showToast(msg){
       const el = document.getElementById("toast");
@@ -191,46 +202,110 @@
       showToast._t = setTimeout(() => el.classList.remove("show"), 2200);
     }
 
-    function getTokenInput(){
-      return document.getElementById("ghToken");
+    function readStored(){
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (!obj || typeof obj.token !== "string" || typeof obj.exp !== "number") return null;
+        // Expiré ?
+        if (Date.now() > obj.exp) {
+          localStorage.removeItem(LS_KEY);
+          return null;
+        }
+        return obj;
+      } catch(e){
+        return null;
+      }
     }
 
-    // 1) Au chargement : on remplit le champ si un token existe
+    function writeStored(token){
+      const obj = { token, exp: Date.now() + SIX_MONTHS_MS };
+      localStorage.setItem(LS_KEY, JSON.stringify(obj));
+      return obj;
+    }
+
+    function clearStored(){
+      localStorage.removeItem(LS_KEY);
+    }
+
+    function fmtDate(ts){
+      try {
+        return new Date(ts).toLocaleDateString("fr-FR", { year ”numeric”, month: "2-digit", day: "2-digit" });
+      } catch(e){
+        return "";
+      }
+    }
+
+    function updateTokenStatus(obj){
+      const s = document.getElementById("tokenStatus");
+      if (!s) return;
+      if (!obj) {
+        s.textContent = "Aucun token enregistré.";
+      } else {
+        const expTxt = new Date(obj.exp).toLocaleString("fr-FR");
+        s.textContent = "Token enregistré ✅ (expire le " + expTxt + ")";
+      }
+    }
+
+    function syncPreviewVisibility(){
+      const activeSel = document.getElementById("active");
+      const previewCard = document.querySelector("section.card.preview");
+      if (!activeSel || !previewCard) return;
+
+      const isActive = (activeSel.value === "true");
+      previewCard.style.display = isActive ? "" : "none";
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
-      const input = getTokenInput();
-      if (!input) return;
+      // Toggle GH zone
+      const btnToggle = document.getElementById("btnToggleGh");
+      const ghZone = document.querySelector(".gh-zone");
+      if (btnToggle && ghZone) {
+        btnToggle.addEventListener("click", () => ghZone.classList.toggle("is-open"));
+      }
 
-      const saved = localStorage.getItem(LS_KEY);
-      if (saved) input.value = saved;
+      // Load token if valid
+      const input = document.getElementById("ghToken");
+      const saved = readStored();
+      if (input && saved) input.value = saved.token;
+      updateTokenStatus(saved);
 
-      // 2) Bouton enregistrer
+      // Save token
       const btnSave = document.getElementById("btnSaveToken");
-      if (btnSave) {
+      if (btnSave && input) {
         btnSave.addEventListener("click", () => {
           const val = (input.value || "").trim();
           if (!val) {
-            localStorage.removeItem(LS_KEY);
             showToast("Token vide : rien enregistré.");
             return;
           }
-          localStorage.setItem(LS_KEY, val);
-          showToast("Token enregistré sur ce téléphone ✅");
+          const obj = writeStored(val);
+          updateTokenStatus(obj);
+          showToast("Token enregistré (6 mois) ✅");
         });
       }
 
-      // 3) Bouton supprimer
+      // Clear token
       const btnClear = document.getElementById("btnClearToken");
-      if (btnClear) {
+      if (btnClear && input) {
         btnClear.addEventListener("click", () => {
-          localStorage.removeItem(LS_KEY);
+          clearStored();
           input.value = "";
+          updateTokenStatus(null);
           showToast("Token supprimé ✅");
         });
       }
+
+      // Preview hide when inactive
+      const activeSel = document.getElementById("active");
+      if (activeSel) activeSel.addEventListener("change", syncPreviewVisibility);
+      syncPreviewVisibility();
     });
   })();
   </script>
 
+  <!-- Ton app existante -->
   <script src="./app.js"></script>
 
   <script>
