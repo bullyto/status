@@ -1,5 +1,5 @@
 /* Simple offline-first service worker */
-const CACHE_NAME = "admin-v1.5";
+const CACHE_NAME = "admin-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -29,6 +29,7 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+
   // Network-first for status.json so updates show quickly
   if (req.url.endsWith("/status.json")) {
     event.respondWith(
@@ -40,6 +41,7 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
+
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req))
   );
