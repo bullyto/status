@@ -10,6 +10,23 @@
   <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
+
+  <style>
+    /* On garde TOUT pour que app.js fonctionne, mais on masque l’affichage */
+    .ui-hide { display:none !important; }
+
+    /* Cache les 3 boutons “pré-programmés” (mais ils existent toujours) */
+    #btnServiceOK,
+    #btnPreviewPopup,
+    #btnDownload { display:none !important; }
+
+    /* Cache toute la zone GitHub (mais inputs toujours présents pour app.js) */
+    .gh-zone { display:none !important; }
+
+    /* Si tu veux aussi cacher le panneau Aperçu, décommente :
+       .preview { display:none !important; }
+    */
+  </style>
 </head>
 
 <body>
@@ -18,8 +35,8 @@
       <div class="brand">
         <img src="icon-192.png" alt="Logo" />
         <div>
-          <h1>Apéro Status Admin</h1>
-          <div class="small">Pilote <code class="inline">status.json</code> et publie.</div>
+          <h1>Apéro Status Admin </h1>
+          <div class="small">Pilote <code class="inline">status.json</code> (panne, incident, météo, sécurité) et publie directement sur APERO DE NUIT 66® et APERO CATALAN® .</div>
         </div>
       </div>
 
@@ -32,7 +49,9 @@
 
     <div class="grid">
       <section class="card">
-        <div class="hd"><div class="small">Contrôle</div></div>
+        <div class="hd">
+          <div class="small">Contrôle</div>
+        </div>
         <div class="bd">
           <div class="row">
             <div>
@@ -77,14 +96,60 @@
 
           <div class="hr"></div>
 
+          <!-- Boutons pré-programmés : présents (app.js OK) mais cachés par CSS -->
           <div class="btns">
+            <button class="ok" id="btnServiceOK">Préparer “service OK”</button>
+            <button class="secondary" id="btnPreviewPopup">Prévisualiser le pop-up</button>
+            <button id="btnDownload">Télécharger status.json</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- Zone GitHub : présente (app.js OK) mais cachée par CSS -->
+          <div class="gh-zone">
+            <div class="row">
+              <div>
+                <label>Dépôt GitHub</label>
+                <div style="display:flex;gap:10px">
+                  <input id="ghOwner" placeholder="bullyto" />
+                  <input id="ghRepo" placeholder="status" />
+                </div>
+              </div>
+              <div>
+                <label>Branch</label>
+                <input id="ghBranch" placeholder="main" />
+              </div>
+            </div>
+
+            <div style="margin-top:10px">
+              <label>Chemin du fichier</label>
+              <input id="ghPath" placeholder="status.json" />
+            </div>
+
+            <div style="margin-top:10px">
+              <label>Token GitHub</label>
+              <input id="ghToken" type="password" placeholder="github_pat_..." autocomplete="off" />
+            </div>
+
+            <div class="btns" style="margin-top:12px">
+              <button class="secondary" id="btnSaveToken">Enregistrer le token</button>
+              <button class="danger" id="btnClearToken">Supprimer le token</button>
+            </div>
+          </div>
+
+          <!-- Seul bouton visible -->
+          <div class="btns" style="margin-top:12px">
             <button id="btnPublish">Publier</button>
           </div>
+
         </div>
       </section>
 
+      <!-- Aperçu (gardé comme avant) -->
       <section class="card preview">
-        <div class="hd"><div class="small">Aperçu</div></div>
+        <div class="hd">
+          <div class="small">Aperçu</div>
+        </div>
         <div class="bd">
           <img id="pImg" alt="Aperçu image" src="./images/panne.png" />
           <div class="badge">
@@ -99,6 +164,7 @@
     </div>
   </div>
 
+  <!-- Preview overlay popup -->
   <div id="overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:999999; align-items:center; justify-content:center; padding:16px;">
     <div style="max-width:520px; width:100%; background:#111; border:1px solid rgba(255,255,255,.12); border-radius:16px; overflow:hidden; box-shadow:0 12px 35px rgba(0,0,0,.45);">
       <img id="overlayImg" alt="" style="width:100%; height:auto; display:block;">
@@ -111,25 +177,6 @@
   </div>
 
   <div id="toast" class="toast"></div>
-
-  <script>
-    window.__cfg = (function(){
-      const o = "bullyto";
-      const r = "status";
-      const b = "main";
-      const p = "status.json";
-
-      const s = [
-        "COLLE_MORCEAU_1_ICI",
-        "COLLE_MORCEAU_2_ICI",
-        "COLLE_MORCEAU_3_ICI"
-      ];
-
-      function t(){ return atob(s.join("")); }
-
-      return { o, r, b, p, t };
-    })();
-  </script>
 
   <script src="./app.js"></script>
 
