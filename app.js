@@ -1,5 +1,17 @@
 const $ = (id) => document.getElementById(id);
 
+function getVal(id, fallback = ""){
+  const el = $(id);
+  const v = el ? (el.value ?? "") : "";
+  const t = String(v).trim();
+  return t || fallback;
+}
+
+function setVal(id, value){
+  const el = $(id);
+  if(el) el.value = value;
+}
+
 function nowIsoParisish(){
   const d = new Date();
   const tz = -d.getTimezoneOffset();
@@ -24,54 +36,69 @@ async function loadStatus(){
 }
 
 function setFormFromStatus(data){
-  $("active").value = String(!!data.active);
-  $("mode").value = data.mode || "none";
+  setVal("active", String(!!data.active));
+  setVal("mode", data.mode || "none");
 
   const m = data.modes || {};
-  const selected = $("mode").value;
+  const selected = getVal("mode", "none");
   const cfg = m[selected] || {};
 
-  $("title").value = cfg.title || "";
-  $("message").value = cfg.message || "";
-  $("image").value = cfg.image || "";
-  $("severity").value = cfg.severity || "info";
+  setVal("title", cfg.title || "");
+  setVal("message", cfg.message || "");
+  setVal("image", cfg.image || "");
+  setVal("severity", cfg.severity || "info");
 
   renderPreview(data);
 }
 
 function renderPreview(data){
-  const active = $("active").value === "true";
-  const mode = $("mode").value;
+  const active = getVal("active", "false") === "true";
+  const mode = getVal("mode", "none");
   const cfg = data.modes?.[mode] || {};
 
-  $("pActive").textContent = active ? "ACTIF" : "INACTIF";
-  $("pMode").textContent = mode;
-  $("pUpdated").textContent = data.last_update || "";
+  if ($("pActive")) $("pActive").textContent = active ? "ACTIF" : "INACTIF";
+  if ($("pMode")) $("pMode").textContent = mode;
+  if ($("pUpdated")) $("pUpdated").textContent = data.last_update || "";
 
-  $("pTitle").textContent = cfg.title || "(titre)";
-  $("pMsg").textContent = cfg.message || "(message)";
-  $("pSev").textContent = cfg.severity || "info";
+  if ($("pTitle")) $("pTitle").textContent = cfg.title || "(titre)";
+  if ($("pMsg")) $("pMsg").textContent = cfg.message || "(message)";
+  if ($("pSev")) $("pSev").textContent = cfg.severity || "info";
 
   const imgSrc = cfg.image ? cfg.image : "images/panne.png";
-  $("pImg").src = imgSrc;
+  if ($("pImg")) $("pImg").src = imgSrc;
 }
 
 function buildUpdatedStatus(current){
   const data = structuredClone(current);
-  data.active = $("active").value === "true";
-  data.mode = $("mode").value;
+
+  const active = getVal("active", "false") === "true";
+  let mode = getVal("mode", "none");
+
+  // ✅ GARANTIE “retirer la pop-up”
+  // Si inactive => on force mode=none + champs vides pour éviter tout affichage côté client.
+  if (!active){
+    mode = "none";
+    setVal("mode", "none");
+    setVal("title", "");
+    setVal("message", "");
+    setVal("image", "");
+    setVal("severity", "info");
+  }
+
+  data.active = active;
+  data.mode = mode;
   data.last_update = nowIsoParisish();
 
   if (!data.modes) data.modes = {};
-  const mode = data.mode;
 
-  if (mode !== "none"){
+  if (mode !== "none" && active){
     if (!data.modes[mode]) data.modes[mode] = {};
-    data.modes[mode].title = $("title").value.trim();
-    data.modes[mode].message = $("message").value.trim();
-    data.modes[mode].image = $("image").value.trim();
-    data.modes[mode].severity = $("severity").value;
+    data.modes[mode].title = getVal("title", "").trim();
+    data.modes[mode].message = getVal("message", "").trim();
+    data.modes[mode].image = getVal("image", "").trim();
+    data.modes[mode].severity = getVal("severity", "info");
   }
+
   return data;
 }
 
@@ -133,156 +160,122 @@ async function githubPutFile({owner, repo, path, branch, token, contentText, sha
   return await r.json();
 }
 
-function doServiceOK(){
-  $("active").value = "false";
-  $("mode").value = "none";
-  $("title").value = "";
-  $("message").value = "";
-  $("image").value = "";
-  $("severity").value = "info";
-  toast("Mode OK prêt.");
-}
-
-function doPreview(current){
-  const data = buildUpdatedStatus(current);
-  if (!data.active){ toast("Active d'abord le statut."); return; }
-  const cfg = data.modes?.[data.mode];
-  if (!cfg){ toast("Mode invalide."); return; }
-
-  $("overlayImg").src = cfg.image || "images/panne.png";
-  $("overlayTitle").textContent = cfg.title || "Information";
-  $("overlayMsg").textContent = cfg.message || "";
-  $("overlay").style.display = "flex";
-}
-
-function getCfg(){
-  const cfg = window.__cfg || {};
-  const owner  = (cfg.o || "").trim();
-  const repo   = (cfg.r || "").trim();
-  const branch = (cfg.b || "main").trim();
-  const path   = (cfg.p || "status.json").trim();
-  const token  = (typeof cfg.t === "function" ? cfg.t() : "").trim();
-  return { owner, repo, branch, path, token };
-}
-
-async function doPublish(currentRef){
-  const { owner, repo, branch, path, token } = getCfg();
-  if(!owner || !repo || !path){ toast("Config manquante."); return; }
-  if(!token){ toast("Token manquant."); return; }
-
-  toast("Lecture GitHub...");
-  const meta = await githubGetFileMeta({owner, repo, path, branch, token});
-  const sha = meta.sha;
-
-  const updated = buildUpdatedStatus(currentRef.current);
-  const contentText = JSON.stringify(updated, null, 2);
-
-  toast("Publication...");
-  await githubPutFile({owner, repo, path, branch, token, contentText, sha});
-
-  currentRef.current = updated;
-  toast("Publié ✅");
-}
-
-function wireHiddenShortcuts(btn, currentRef){
-  let taps = 0;
-  let tapTimer = null;
-  let longTimer = null;
-  let longFired = false;
-
-  const reset = () => {
-    taps = 0;
-    longFired = false;
-    if(tapTimer){ clearTimeout(tapTimer); tapTimer = null; }
-    if(longTimer){ clearTimeout(longTimer); longTimer = null; }
-  };
-
-  const scheduleTapResolve = () => {
-    if(tapTimer) clearTimeout(tapTimer);
-    tapTimer = setTimeout(async () => {
-      const n = taps;
-      taps = 0;
-
-      try{
-        if(n >= 3){
-          const updated = buildUpdatedStatus(currentRef.current);
-          downloadJson("status.json", updated);
-          toast("Téléchargé.");
-          return;
-        }
-        if(n === 2){
-          doPreview(currentRef.current);
-          return;
-        }
-        if(n === 1){
-          await doPublish(currentRef);
-          return;
-        }
-      } catch(e){
-        console.error(e);
-        toast("Erreur : " + (e?.message || e));
-      }
-    }, 320);
-  };
-
-  const onDown = (e) => {
-    longFired = false;
-    if(longTimer) clearTimeout(longTimer);
-    longTimer = setTimeout(() => {
-      longFired = true;
-      doServiceOK();
-      renderPreview(buildUpdatedStatus(currentRef.current));
-    }, 1200);
-  };
-
-  const onUp = () => {
-    if(longTimer){ clearTimeout(longTimer); longTimer = null; }
-    if(longFired){
-      reset();
-      return;
-    }
-    taps++;
-    scheduleTapResolve();
-  };
-
-  btn.addEventListener("pointerdown", onDown);
-  btn.addEventListener("pointerup", onUp);
-  btn.addEventListener("pointercancel", reset);
-  btn.addEventListener("pointerleave", () => { if(longTimer) clearTimeout(longTimer); });
-}
-
 async function main(){
+  // ✅ defaults robustes même si les inputs sont cachés / absents
+  setVal("ghOwner", localStorage.getItem("gh_owner") || getVal("ghOwner","bullyto") || "bullyto");
+  setVal("ghRepo", localStorage.getItem("gh_repo") || getVal("ghRepo","status") || "status");
+  setVal("ghBranch", localStorage.getItem("gh_branch") || getVal("ghBranch","main") || "main");
+  setVal("ghPath", localStorage.getItem("gh_path") || getVal("ghPath","status.json") || "status.json");
+  setVal("ghToken", localStorage.getItem("gh_token") || getVal("ghToken","") || "");
+
   let current = await loadStatus();
-  const currentRef = { current };
 
   const modes = Object.keys(current.modes || {});
-  $("mode").innerHTML =
-    `<option value="none">Aucun (service OK)</option>` +
-    modes.map(m => `<option value="${m}">${m}</option>`).join("");
+  if ($("mode")){
+    $("mode").innerHTML =
+      `<option value="none">Aucun (service OK)</option>` +
+      modes.map(m => `<option value="${m}">${m}</option>`).join("");
+  }
 
   setFormFromStatus(current);
 
-  $("active").addEventListener("change", ()=> renderPreview(buildUpdatedStatus(currentRef.current)));
-  $("mode").addEventListener("change", ()=> {
-    const mode = $("mode").value;
-    const cfg = currentRef.current.modes?.[mode] || {};
-    $("title").value = cfg.title || "";
-    $("message").value = cfg.message || "";
-    $("image").value = cfg.image || "";
-    $("severity").value = cfg.severity || "info";
-    renderPreview(buildUpdatedStatus(currentRef.current));
+  if ($("active")) $("active").addEventListener("change", ()=> renderPreview(buildUpdatedStatus(current)));
+  if ($("mode")) $("mode").addEventListener("change", ()=> {
+    const mode = getVal("mode","none");
+    const cfg = current.modes?.[mode] || {};
+    setVal("title", cfg.title || "");
+    setVal("message", cfg.message || "");
+    setVal("image", cfg.image || "");
+    setVal("severity", cfg.severity || "info");
+    renderPreview(buildUpdatedStatus(current));
   });
+
   ["title","message","image","severity"].forEach(id => {
-    $(id).addEventListener("input", ()=> renderPreview(buildUpdatedStatus(currentRef.current)));
+    const el = $(id);
+    if(el) el.addEventListener("input", ()=> renderPreview(buildUpdatedStatus(current)));
   });
 
-  $("overlayBtn").addEventListener("click", ()=> $("overlay").style.display = "none");
-  $("overlay").addEventListener("click", (e)=> { if (e.target === $("overlay")) $("overlay").style.display = "none"; });
+  if ($("btnDownload")) $("btnDownload").addEventListener("click", ()=>{
+    const updated = buildUpdatedStatus(current);
+    downloadJson("status.json", updated);
+    toast("status.json téléchargé.");
+  });
 
-  const btn = $("btnPublish");
-  wireHiddenShortcuts(btn, currentRef);
+  if ($("btnServiceOK")) $("btnServiceOK").addEventListener("click", ()=>{
+    setVal("active","false");
+    setVal("mode","none");
+    setVal("title","");
+    setVal("message","");
+    setVal("image","");
+    setVal("severity","info");
+    renderPreview(buildUpdatedStatus(current));
+    toast("Mode 'service OK' prêt.");
+  });
 
-  renderPreview(buildUpdatedStatus(currentRef.current));
+  if ($("btnPreviewPopup")) $("btnPreviewPopup").addEventListener("click", ()=>{
+    const data = buildUpdatedStatus(current);
+    if (!data.active){ toast("Active d'abord le statut."); return; }
+    const cfg = data.modes?.[data.mode];
+    if (!cfg){ toast("Mode invalide."); return; }
+
+    if ($("overlayImg")) $("overlayImg").src = cfg.image || "images/panne.png";
+    if ($("overlayTitle")) $("overlayTitle").textContent = cfg.title || "Information";
+    if ($("overlayMsg")) $("overlayMsg").textContent = cfg.message || "";
+    if ($("overlay")) $("overlay").style.display = "flex";
+  });
+
+  if ($("overlayBtn")) $("overlayBtn").addEventListener("click", ()=> { if ($("overlay")) $("overlay").style.display = "none"; });
+  if ($("overlay")) $("overlay").addEventListener("click", (e)=> { if (e.target === $("overlay")) $("overlay").style.display = "none"; });
+
+  if ($("btnSaveToken")) $("btnSaveToken").addEventListener("click", ()=>{
+    const token = getVal("ghToken","").trim();
+    if(!token){ toast("Token vide."); return; }
+    localStorage.setItem("gh_token", token);
+    toast("Token enregistré sur ce téléphone.");
+  });
+
+  if ($("btnClearToken")) $("btnClearToken").addEventListener("click", ()=>{
+    localStorage.removeItem("gh_token");
+    setVal("ghToken","");
+    toast("Token supprimé.");
+  });
+
+  ["ghOwner","ghRepo","ghBranch","ghPath"].forEach(id => {
+    const el = $(id);
+    if(!el) return;
+    el.addEventListener("change", ()=>{
+      localStorage.setItem(id.replace("gh","gh_").toLowerCase(), getVal(id,""));
+    });
+  });
+
+  if ($("btnPublish")) $("btnPublish").addEventListener("click", async ()=>{
+    try{
+      const owner  = getVal("ghOwner", "bullyto");
+      const repo   = getVal("ghRepo", "status");
+      const branch = getVal("ghBranch", "main");
+      const path   = getVal("ghPath", "status.json");
+      const token  = getVal("ghToken","") || (localStorage.getItem("gh_token") || "").trim();
+
+      if(!owner || !repo || !path) { toast("Config manquante."); return; }
+      if(!token){ toast("Ajoute ton token GitHub."); return; }
+
+      toast("Lecture du fichier sur GitHub...");
+      const meta = await githubGetFileMeta({owner, repo, path, branch, token});
+      const sha = meta.sha;
+
+      const updated = buildUpdatedStatus(current);
+      const contentText = JSON.stringify(updated, null, 2);
+
+      toast("Publication sur GitHub...");
+      await githubPutFile({owner, repo, path, branch, token, contentText, sha});
+
+      current = updated;
+      toast("Publié ✅");
+    } catch(err){
+      console.error(err);
+      toast("Erreur GitHub : " + (err?.message || err));
+    }
+  });
 }
 
 main();
