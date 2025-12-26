@@ -1,7 +1,7 @@
 {
-  "active": true,
-  "mode": "meteo",
-  "last_update": "2025-12-26T04:21:31.350+01:00",
+  "active": false,
+  "mode": "none",
+  "last_update": "2025-12-26T04:23:34.552+01:00",
   "modes": {
     "panne": {
       "title": "Service temporairement suspendu",
@@ -16,7 +16,7 @@
       "severity": "info"
     },
     "meteo": {
-      "title": "Service suspendu pour notre sécurité",
+      "title": "Service suspendu pour votre sécurité",
       "message": "Les conditions météo rendent la circulation trop dangereuse. Le service est suspendu temporairement.",
       "image": "images/meteo.png",
       "severity": "danger"
