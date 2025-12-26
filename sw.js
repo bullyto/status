@@ -1,5 +1,5 @@
 /* Simple offline-first service worker */
-const CACHE_NAME = "admin-v1";
+const CACHE_NAME = "admin-v1.5";
 const ASSETS = [
   "./",
   "./index.html",
@@ -11,8 +11,8 @@ const ASSETS = [
   "./images/incident.png",
   "./images/meteo.png",
   "./images/securite.png",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
+  "./icon-192.png",
+  "./icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {
