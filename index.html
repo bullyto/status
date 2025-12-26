@@ -75,7 +75,7 @@
           <div style="margin-top:10px">
             <label>Image (chemin local dans le dépôt status)</label>
             <input id="image" placeholder="images/panne.png" />
-</div>
+          </div>
 
           <div class="hr"></div>
 
@@ -86,7 +86,8 @@
           </div>
 
           <div class="hr"></div>
-<div class="row">
+
+          <div class="row">
             <div>
               <label>Dépôt GitHub</label>
               <div style="display:flex;gap:10px">
@@ -99,21 +100,23 @@
               <input id="ghBranch" placeholder="main" />
             </div>
           </div>
+
           <div style="margin-top:10px">
             <label>Chemin du fichier</label>
             <input id="ghPath" placeholder="status.json" />
           </div>
+
           <div style="margin-top:10px">
             <label>Token GitHub</label>
             <input id="ghToken" type="password" placeholder="github_pat_..." autocomplete="off" />
-</div>
+          </div>
 
           <div class="btns" style="margin-top:12px">
             <button class="secondary" id="btnSaveToken">Enregistrer le token</button>
             <button class="danger" id="btnClearToken">Supprimer le token</button>
             <button id="btnPublish">Publier sur GitHub</button>
           </div>
-</div>
+        </div>
       </section>
 
       <section class="card preview">
@@ -129,7 +132,7 @@
           </div>
           <div style="margin-top:10px; font-weight:900; font-size:18px" id="pTitle">—</div>
           <div style="margin-top:6px; color:rgba(234,242,255,.82); line-height:1.35" id="pMsg">—</div>
-</div>
+        </div>
       </section>
     </div>
   </div>
@@ -149,5 +152,14 @@
   <div id="toast" class="toast"></div>
 
   <script src="./app.js"></script>
+
+  <!-- ✅ Enregistrement SW ici (meilleure compatibilité "Installable") -->
+  <script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js");
+    });
+  }
+  </script>
 </body>
 </html>
