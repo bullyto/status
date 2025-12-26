@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Apéro Status Admin</title>
+
+  <meta name="theme-color" content="#0a121c" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <img src="./icons/icon-192.png" alt="Logo" />
+        <div>
+          <h1>Apéro Status Admin (PWA)</h1>
+          <div class="small">Active/désactive un message global (panne, incident, météo, sécurité routière) via <code class="inline">status.json</code>.</div>
+        </div>
+      </div>
+
+      <div class="badge">
+        <span>État :</span> <b id="pActive">—</b>
+        <span style="opacity:.5">•</span>
+        <span>Mode :</span> <b id="pMode">—</b>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="hd">
+          <div class="small">Contrôle</div>
+        </div>
+        <div class="bd">
+          <div class="row">
+            <div>
+              <label>Statut global</label>
+              <select id="active">
+                <option value="false">Inactif (aucun pop-up)</option>
+                <option value="true">Actif (pop-up affiché)</option>
+              </select>
+            </div>
+            <div>
+              <label>Situation</label>
+              <select id="mode"></select>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row">
+            <div>
+              <label>Titre</label>
+              <input id="title" placeholder="Ex: Service temporairement suspendu" />
+            </div>
+            <div>
+              <label>Niveau</label>
+              <select id="severity">
+                <option value="info">info</option>
+                <option value="warning">warning</option>
+                <option value="danger">danger</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <label>Message</label>
+            <textarea id="message" placeholder="Texte affiché dans le pop-up..."></textarea>
+          </div>
+
+          <div style="margin-top:10px">
+            <label>Image (chemin local dans ce dépôt)</label>
+            <input id="image" placeholder="images/panne.png" />
+            <div class="small" style="margin-top:6px">Astuce : garde des chemins simples, ex <code class="inline">images/meteo.png</code>.</div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="btns">
+            <button class="ok" id="btnServiceOK">Préparer “service OK”</button>
+            <button id="btnDownload">Télécharger status.json</button>
+            <button class="secondary" id="btnReset">Recharger depuis le site</button>
+            <button class="secondary" id="btnPreviewPopup">Prévisualiser le pop-up</button>
+          </div>
+
+          <p class="note" style="margin-top:12px">
+            Fonctionnement : cette PWA <b>ne peut pas écrire toute seule sur GitHub</b> (sécurité). Elle te fait générer un
+            <code class="inline">status.json</code> prêt, que tu remplaces ensuite dans ton dépôt (commit GitHub).
+          </p>
+
+          <p class="note">
+            <span class="small">URL typique du status :</span><br />
+            <span id="hint" class="small"></span>
+          </p>
+        </div>
+      </section>
+
+      <section class="card preview">
+        <div class="hd">
+          <div class="small">Aperçu</div>
+        </div>
+        <div class="bd">
+          <img id="pImg" alt="Aperçu image" src="./images/panne.png" />
+          <div class="badge">
+            <span>Dernière maj :</span> <b id="pUpdated">—</b>
+            <span style="opacity:.5">•</span>
+            <span>Severity :</span> <b id="pSev">—</b>
+          </div>
+          <div style="margin-top:10px; font-weight:900; font-size:18px" id="pTitle">—</div>
+          <div style="margin-top:6px; color:rgba(234,242,255,.82); line-height:1.35" id="pMsg">—</div>
+
+          <div class="hr"></div>
+
+          <p class="note">
+            Ensuite, sur tes 2 sites clients, tu mets un petit script qui lit ce <code class="inline">status.json</code> et affiche un pop-up identique.
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Preview overlay popup -->
+  <div id="overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:999999; align-items:center; justify-content:center; padding:16px;">
+    <div style="max-width:520px; width:100%; background:#111; border:1px solid rgba(255,255,255,.12); border-radius:16px; overflow:hidden; box-shadow:0 12px 35px rgba(0,0,0,.45);">
+      <img id="overlayImg" alt="" style="width:100%; height:auto; display:block;">
+      <div style="padding:14px 14px 16px;">
+        <div id="overlayTitle" style="font-size:18px; font-weight:800; margin:0 0 6px; color:#fff;"></div>
+        <div id="overlayMsg" style="font-size:14px; line-height:1.35; color:rgba(255,255,255,.85);"></div>
+        <button id="overlayBtn" style="margin-top:12px; width:100%; padding:12px 14px; border-radius:12px; border:0; font-weight:800; cursor:pointer;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
