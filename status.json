@@ -1,7 +1,7 @@
 {
   "active": true,
   "mode": "meteo",
-  "last_update": "2025-12-26T07:01:44.672+01:00",
+  "last_update": "2025-12-26T07:02:50.504+01:00",
   "modes": {
     "panne": {
       "title": "Service temporairement suspendu",
@@ -18,7 +18,7 @@
     "meteo": {
       "title": "Service suspendu pour notre sécurité",
       "message": "Les conditions météo rendent la circulation trop dangereuse. Le service est suspendu temporairement.",
-      "image": "https://github.com/bullyto/status/blob/main/images/meteo.png",
+      "image": "https://raw.githubusercontent.com/bullyto/status/main/images/meteo.png",
       "severity": "info"
     },
     "securite_routiere": {
