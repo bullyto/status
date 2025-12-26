@@ -1,5 +1,5 @@
 /* Simple offline-first service worker */
-const CACHE_NAME = "status-admin-v1";
+const CACHE_NAME = "status-v1";
 const ASSETS = [
   "./",
   "./index.html",
