@@ -75,6 +75,17 @@ function buildUpdatedStatus(current){
   return data;
 }
 
+function downloadJson(filename, obj){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+
 function b64encodeUtf8(str){
   return btoa(unescape(encodeURIComponent(str)));
 }
@@ -122,8 +133,127 @@ async function githubPutFile({owner, repo, path, branch, token, contentText, sha
   return await r.json();
 }
 
+function doServiceOK(){
+  $("active").value = "false";
+  $("mode").value = "none";
+  $("title").value = "";
+  $("message").value = "";
+  $("image").value = "";
+  $("severity").value = "info";
+  toast("Mode OK prêt.");
+}
+
+function doPreview(current){
+  const data = buildUpdatedStatus(current);
+  if (!data.active){ toast("Active d'abord le statut."); return; }
+  const cfg = data.modes?.[data.mode];
+  if (!cfg){ toast("Mode invalide."); return; }
+
+  $("overlayImg").src = cfg.image || "images/panne.png";
+  $("overlayTitle").textContent = cfg.title || "Information";
+  $("overlayMsg").textContent = cfg.message || "";
+  $("overlay").style.display = "flex";
+}
+
+function getCfg(){
+  const cfg = window.__cfg || {};
+  const owner  = (cfg.o || "").trim();
+  const repo   = (cfg.r || "").trim();
+  const branch = (cfg.b || "main").trim();
+  const path   = (cfg.p || "status.json").trim();
+  const token  = (typeof cfg.t === "function" ? cfg.t() : "").trim();
+  return { owner, repo, branch, path, token };
+}
+
+async function doPublish(currentRef){
+  const { owner, repo, branch, path, token } = getCfg();
+  if(!owner || !repo || !path){ toast("Config manquante."); return; }
+  if(!token){ toast("Token manquant."); return; }
+
+  toast("Lecture GitHub...");
+  const meta = await githubGetFileMeta({owner, repo, path, branch, token});
+  const sha = meta.sha;
+
+  const updated = buildUpdatedStatus(currentRef.current);
+  const contentText = JSON.stringify(updated, null, 2);
+
+  toast("Publication...");
+  await githubPutFile({owner, repo, path, branch, token, contentText, sha});
+
+  currentRef.current = updated;
+  toast("Publié ✅");
+}
+
+function wireHiddenShortcuts(btn, currentRef){
+  let taps = 0;
+  let tapTimer = null;
+  let longTimer = null;
+  let longFired = false;
+
+  const reset = () => {
+    taps = 0;
+    longFired = false;
+    if(tapTimer){ clearTimeout(tapTimer); tapTimer = null; }
+    if(longTimer){ clearTimeout(longTimer); longTimer = null; }
+  };
+
+  const scheduleTapResolve = () => {
+    if(tapTimer) clearTimeout(tapTimer);
+    tapTimer = setTimeout(async () => {
+      const n = taps;
+      taps = 0;
+
+      try{
+        if(n >= 3){
+          const updated = buildUpdatedStatus(currentRef.current);
+          downloadJson("status.json", updated);
+          toast("Téléchargé.");
+          return;
+        }
+        if(n === 2){
+          doPreview(currentRef.current);
+          return;
+        }
+        if(n === 1){
+          await doPublish(currentRef);
+          return;
+        }
+      } catch(e){
+        console.error(e);
+        toast("Erreur : " + (e?.message || e));
+      }
+    }, 320);
+  };
+
+  const onDown = (e) => {
+    longFired = false;
+    if(longTimer) clearTimeout(longTimer);
+    longTimer = setTimeout(() => {
+      longFired = true;
+      doServiceOK();
+      renderPreview(buildUpdatedStatus(currentRef.current));
+    }, 1200);
+  };
+
+  const onUp = () => {
+    if(longTimer){ clearTimeout(longTimer); longTimer = null; }
+    if(longFired){
+      reset();
+      return;
+    }
+    taps++;
+    scheduleTapResolve();
+  };
+
+  btn.addEventListener("pointerdown", onDown);
+  btn.addEventListener("pointerup", onUp);
+  btn.addEventListener("pointercancel", reset);
+  btn.addEventListener("pointerleave", () => { if(longTimer) clearTimeout(longTimer); });
+}
+
 async function main(){
   let current = await loadStatus();
+  const currentRef = { current };
 
   const modes = Object.keys(current.modes || {});
   $("mode").innerHTML =
@@ -132,52 +262,27 @@ async function main(){
 
   setFormFromStatus(current);
 
-  $("active").addEventListener("change", ()=> renderPreview(buildUpdatedStatus(current)));
+  $("active").addEventListener("change", ()=> renderPreview(buildUpdatedStatus(currentRef.current)));
   $("mode").addEventListener("change", ()=> {
     const mode = $("mode").value;
-    const cfg = current.modes?.[mode] || {};
+    const cfg = currentRef.current.modes?.[mode] || {};
     $("title").value = cfg.title || "";
     $("message").value = cfg.message || "";
     $("image").value = cfg.image || "";
     $("severity").value = cfg.severity || "info";
-    renderPreview(buildUpdatedStatus(current));
+    renderPreview(buildUpdatedStatus(currentRef.current));
   });
   ["title","message","image","severity"].forEach(id => {
-    $(id).addEventListener("input", ()=> renderPreview(buildUpdatedStatus(current)));
+    $(id).addEventListener("input", ()=> renderPreview(buildUpdatedStatus(currentRef.current)));
   });
 
   $("overlayBtn").addEventListener("click", ()=> $("overlay").style.display = "none");
   $("overlay").addEventListener("click", (e)=> { if (e.target === $("overlay")) $("overlay").style.display = "none"; });
 
-  $("btnPublish").addEventListener("click", async ()=>{
-    try{
-      const cfg = window.__cfg || {};
-      const owner  = (cfg.o || "").trim();
-      const repo   = (cfg.r || "").trim();
-      const branch = (cfg.b || "main").trim();
-      const path   = (cfg.p || "status.json").trim();
-      const token  = (typeof cfg.t === "function" ? cfg.t() : "").trim();
+  const btn = $("btnPublish");
+  wireHiddenShortcuts(btn, currentRef);
 
-      if(!owner || !repo || !path){ toast("Config manquante."); return; }
-      if(!token){ toast("Token manquant."); return; }
-
-      toast("Lecture GitHub...");
-      const meta = await githubGetFileMeta({owner, repo, path, branch, token});
-      const sha = meta.sha;
-
-      const updated = buildUpdatedStatus(current);
-      const contentText = JSON.stringify(updated, null, 2);
-
-      toast("Publication...");
-      await githubPutFile({owner, repo, path, branch, token, contentText, sha});
-
-      current = updated;
-      toast("Publié ✅");
-    } catch(err){
-      console.error(err);
-      toast("Erreur : " + (err?.message || err));
-    }
-  });
+  renderPreview(buildUpdatedStatus(currentRef.current));
 }
 
 main();
