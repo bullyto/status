@@ -12,19 +12,17 @@
   <link rel="stylesheet" href="./styles.css" />
 
   <style>
-    /* On garde TOUT pour que app.js fonctionne */
     .ui-hide { display:none !important; }
 
-    /* Cache les boutons pré-programmés */
+    /* Cache les boutons pré-programmés (mais ils existent toujours) */
     #btnServiceOK,
     #btnPreviewPopup,
     #btnDownload { display:none !important; }
 
-    /* Zone GitHub : masquée par défaut, affichable via bouton */
+    /* Zone GitHub masquée par défaut, affichable via bouton Paramètre */
     .gh-zone { display:none; }
     .gh-zone.is-open { display:block; }
 
-    /* Petit texte aide */
     .hint { font-size:12px; opacity:.72; margin-top:6px; line-height:1.25; }
   </style>
 </head>
@@ -107,12 +105,7 @@
 
           <div class="hr"></div>
 
-          <!-- ✅ Bouton pour afficher/masquer les paramètres GitHub -->
-          <div class="btns" style="margin-top:12px">
-            <button type="button" class="secondary" id="btnToggleGh">Paramètres GitHub</button>
-          </div>
-
-          <!-- Zone GitHub (désormais accessible via bouton) -->
+          <!-- Zone GitHub (cachée/affichée via bouton Paramètre) -->
           <div class="gh-zone" style="margin-top:12px">
             <div class="row">
               <div>
@@ -138,7 +131,7 @@
               <input id="ghToken" type="password" autocomplete="off" placeholder="ghp_..." />
               <div class="hint">
                 Stocké en local sur ce téléphone (localStorage) avec expiration automatique (6 mois).
-                <br><span id="tokenStatus" style="opacity:.85">—</span>
+                <br><span id="tokenStatus" style="opacity:.9">—</span>
               </div>
             </div>
 
@@ -146,11 +139,14 @@
               <button class="secondary" id="btnSaveToken" type="button">Enregistrer le token</button>
               <button class="danger" id="btnClearToken" type="button">Supprimer le token</button>
             </div>
+
+            <div class="hr" style="margin-top:14px"></div>
           </div>
 
-          <!-- Seul bouton visible -->
-          <div class="btns" style="margin-top:12px">
-            <button id="btnPublish">Publier</button>
+          <!-- ✅ Publier + Paramètre côte à côte -->
+          <div class="btns" style="margin-top:12px; display:flex; gap:10px;">
+            <button id="btnPublish" style="flex:1;">Publier</button>
+            <button id="btnToggleGh" type="button" class="secondary" style="min-width:140px;">Paramètre</button>
           </div>
 
         </div>
@@ -187,28 +183,31 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- ✅ Gestion Token localStorage avec expiration 6 mois + toggle UI + preview hide si inactive -->
+  <!-- Ton app existante -->
+  <script src="./app.js"></script>
+
+  <!-- ✅ Correctifs : toggle Paramètre + token localStorage 6 mois + preview hide si inactif -->
   <script>
   (function(){
-    const LS_KEY = "gh_token_v1";       // { token: "...", exp: 1234567890 }
+    const LS_KEY = "gh_token_v1"; // JSON { token: string, exp: number }
     const SIX_MONTHS_MS = 1000 * 60 * 60 * 24 * 30 * 6;
 
-    function showToast(msg){
+    function toast(msg){
       const el = document.getElementById("toast");
       if (!el) return;
       el.textContent = msg;
       el.classList.add("show");
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => el.classList.remove("show"), 2200);
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 2200);
     }
 
-    function readStored(){
+    function readToken(){
       try {
         const raw = localStorage.getItem(LS_KEY);
         if (!raw) return null;
         const obj = JSON.parse(raw);
         if (!obj || typeof obj.token !== "string" || typeof obj.exp !== "number") return null;
-        // Expiré ?
+
         if (Date.now() > obj.exp) {
           localStorage.removeItem(LS_KEY);
           return null;
@@ -219,25 +218,17 @@
       }
     }
 
-    function writeStored(token){
+    function saveToken(token){
       const obj = { token, exp: Date.now() + SIX_MONTHS_MS };
       localStorage.setItem(LS_KEY, JSON.stringify(obj));
       return obj;
     }
 
-    function clearStored(){
+    function clearToken(){
       localStorage.removeItem(LS_KEY);
     }
 
-    function fmtDate(ts){
-      try {
-        return new Date(ts).toLocaleDateString("fr-FR", { year ”numeric”, month: "2-digit", day: "2-digit" });
-      } catch(e){
-        return "";
-      }
-    }
-
-    function updateTokenStatus(obj){
+    function setTokenStatus(obj){
       const s = document.getElementById("tokenStatus");
       if (!s) return;
       if (!obj) {
@@ -252,61 +243,65 @@
       const activeSel = document.getElementById("active");
       const previewCard = document.querySelector("section.card.preview");
       if (!activeSel || !previewCard) return;
-
-      const isActive = (activeSel.value === "true");
-      previewCard.style.display = isActive ? "" : "none";
+      previewCard.style.display = (activeSel.value === "true") ? "" : "none";
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      // Toggle GH zone
+    function init(){
       const btnToggle = document.getElementById("btnToggleGh");
       const ghZone = document.querySelector(".gh-zone");
+      const input = document.getElementById("ghToken");
+      const btnSave = document.getElementById("btnSaveToken");
+      const btnClear = document.getElementById("btnClearToken");
+      const activeSel = document.getElementById("active");
+
+      // Toggle Paramètre
       if (btnToggle && ghZone) {
-        btnToggle.addEventListener("click", () => ghZone.classList.toggle("is-open"));
+        btnToggle.addEventListener("click", () => {
+          ghZone.classList.toggle("is-open");
+        });
       }
 
-      // Load token if valid
-      const input = document.getElementById("ghToken");
-      const saved = readStored();
-      if (input && saved) input.value = saved.token;
-      updateTokenStatus(saved);
+      // Remplissage auto si token valide
+      const stored = readToken();
+      if (input && stored) input.value = stored.token;
+      setTokenStatus(stored);
 
-      // Save token
-      const btnSave = document.getElementById("btnSaveToken");
+      // Enregistrer
       if (btnSave && input) {
         btnSave.addEventListener("click", () => {
           const val = (input.value || "").trim();
           if (!val) {
-            showToast("Token vide : rien enregistré.");
+            toast("Token vide : rien enregistré.");
             return;
           }
-          const obj = writeStored(val);
-          updateTokenStatus(obj);
-          showToast("Token enregistré (6 mois) ✅");
+          const obj = saveToken(val);
+          setTokenStatus(obj);
+          toast("Token enregistré (6 mois) ✅");
         });
       }
 
-      // Clear token
-      const btnClear = document.getElementById("btnClearToken");
+      // Supprimer
       if (btnClear && input) {
         btnClear.addEventListener("click", () => {
-          clearStored();
+          clearToken();
           input.value = "";
-          updateTokenStatus(null);
-          showToast("Token supprimé ✅");
+          setTokenStatus(null);
+          toast("Token supprimé ✅");
         });
       }
 
-      // Preview hide when inactive
-      const activeSel = document.getElementById("active");
+      // Aperçu caché quand inactif
       if (activeSel) activeSel.addEventListener("change", syncPreviewVisibility);
       syncPreviewVisibility();
-    });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
   })();
   </script>
-
-  <!-- Ton app existante -->
-  <script src="./app.js"></script>
 
   <script>
   if ("serviceWorker" in navigator) {
