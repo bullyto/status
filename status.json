@@ -1,7 +1,7 @@
 {
-  "active": true,
+  "active": false,
   "mode": "none",
-  "last_update": "2025-12-28T00:43:25.833+01:00",
+  "last_update": "2025-12-28T00:44:59.392+01:00",
   "modes": {
     "panne": {
       "title": "Service temporairement suspendu",
