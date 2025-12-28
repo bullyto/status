@@ -1,7 +1,7 @@
 {
   "active": true,
-  "mode": "meteo",
-  "last_update": "2025-12-27T22:01:47.220+01:00",
+  "mode": "none",
+  "last_update": "2025-12-28T00:38:49.358+01:00",
   "modes": {
     "panne": {
       "title": "Service temporairement suspendu",
