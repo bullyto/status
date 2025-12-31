@@ -1,7 +1,7 @@
 {
   "active": true,
-  "mode": "none",
-  "last_update": "2025-12-31T20:14:08.082+01:00",
+  "mode": "securite_routiere",
+  "last_update": "2025-12-31T20:17:08.116+01:00",
   "modes": {
     "panne": {
       "title": "Service temporairement suspendu",
@@ -22,9 +22,9 @@
       "severity": "info"
     },
     "securite_routiere": {
-      "title": "Service suspendu quelques jours",
-      "message": "Dans le cadre de notre stage annuel de sensibilisation à la sécurité routière, le service est temporairement suspendu.",
-      "image": "images/securite.png",
+      "title": "Service suspendu temporairement",
+      "message": "Service temporairement suspendu entre 23h30 et 00h30.\n\nBonne année à tous 🎉🎉😁",
+      "image": "https://image.noelshack.com/fichiers/2025/01/3/1767211712-snapchat-1821453509.jpg",
       "severity": "info"
     }
   }
