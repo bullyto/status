@@ -1,7 +1,7 @@
 {
   "active": true,
-  "mode": "info",
-  "last_update": "2026-01-01T05:36:16.577+01:00",
+  "mode": "warning",
+  "last_update": "2026-01-01T05:37:57.778+01:00",
   "modes": {
     "info": {
       "title": "Information",
@@ -18,6 +18,8 @@
       "block_order": true,
       "block_schedule": {
         "enabled": false,
+        "start": "19:00",
+        "end": "06:00",
         "days": [
           1,
           2,
@@ -26,10 +28,9 @@
           5,
           6,
           0
-        ],
-        "start": "19:00",
-        "end": "06:00"
-      }
+        ]
+      },
+      "warning_click_message": "Ce n'est actuellement pas possible de commander."
     }
   },
   "presets": {
