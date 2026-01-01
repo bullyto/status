@@ -1,14 +1,14 @@
 {
   "active": true,
   "mode": "info",
-  "last_update": "2026-01-01T13:09:05.680+01:00",
+  "last_update": "2026-01-01T13:12:33.985+01:00",
   "modes": {
     "info": {
-      "title": "Météo",
-      "message": "Conditions météo compliquées. Service possiblement ralenti.",
-      "image": "images/météo.png",
+      "title": "Panne",
+      "message": "Panne technique en cours. Service impacté.",
+      "image": "images/panne.png",
       "severity": "info",
-      "ok_delay_seconds": 10
+      "ok_delay_seconds": 20
     },
     "warning": {
       "title": "Météo",
