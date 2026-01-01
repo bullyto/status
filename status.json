@@ -1,18 +1,18 @@
 {
   "active": true,
-  "mode": "info",
-  "last_update": "2026-01-01T18:19:33.368+01:00",
+  "mode": "warning",
+  "last_update": "2026-01-01T18:20:29.698+01:00",
   "modes": {
     "info": {
-      "title": "Texte test",
-      "message": "Test test apero",
+      "title": "Test",
+      "message": "Message test",
       "image": "images/panne.png",
       "severity": "info",
       "ok_delay_seconds": 20
     },
     "warning": {
-      "title": "",
-      "message": "",
+      "title": "Panne",
+      "message": "Panne technique en cours. Service impacté.",
       "image": "images/panne.png",
       "severity": "warning",
       "block_order": true,
@@ -21,6 +21,7 @@
         "start": "18:45",
         "end": "18:48",
         "days": [
+          3,
           4
         ]
       },
