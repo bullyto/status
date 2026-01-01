@@ -19,7 +19,7 @@
     .gh-zone { display:none; }
     .gh-zone.is-open { display:block; }
 
-    /* Empêche les débordements horizontaux (et aide sur certains devices) */
+    /* Empêche les débordements horizontaux */
     html, body { max-width: 100%; overflow-x: hidden; }
 
     /* Conteneurs "Publié" vs "Brouillon" bien distincts */
@@ -47,7 +47,7 @@
 
     .kv {
       display:grid;
-      grid-template-columns: 140px 1fr;
+      grid-template-columns: 120px 1fr;
       gap: 8px 10px;
       margin-top: 10px;
       font-size: 13px;
@@ -56,6 +56,35 @@
     .kv b { font-weight: 800; opacity: .95; }
     .kv .k { opacity: .7; }
 
+    /* ✅ FIX: badge qui wrap + ne déborde pas + plus petit */
+    .badge{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 10px;
+      align-items:center;
+      justify-content:flex-start;
+      max-width:100%;
+      overflow:hidden;
+      padding:10px 12px;
+    }
+    .badge span{ opacity:.75; font-size:12px; }
+    .badge b{
+      font-size:13px;
+      font-weight:900;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    /* Date ISO longue: autoriser la coupure */
+    #liveUpdated, #pUpdated{
+      white-space:normal !important;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      display:inline-block;
+      max-width:100%;
+    }
+
     /* Remplacement des pickers d'heure (plus de popup Android qui déborde) */
     .timepick {
       display:flex;
@@ -63,9 +92,7 @@
       align-items:center;
       flex-wrap:wrap;
     }
-    .timepick select{
-      min-width: 110px;
-    }
+    .timepick select{ min-width: 120px; }
     .timepick .hint{
       opacity:.7;
       font-size:12px;
@@ -114,8 +141,9 @@
         <div class="section-title">
           <div>
             <div style="font-weight:900">Publié actuellement (en ligne)</div>
-            <div class="small">Ce bloc doit refléter EXACTEMENT ce qui est déjà publié sur <code class="inline">status.json</code>.</div>
+            <div class="small">Ce bloc reflète EXACTEMENT ce qui est déjà publié sur <code class="inline">status.json</code>.</div>
           </div>
+
           <div class="badge">
             <span>État :</span> <b id="liveActive">—</b>
             <span style="opacity:.5">•</span>
@@ -141,7 +169,10 @@
             <div class="kv" aria-label="Détails publication">
               <div class="k">Création :</div> <div><b id="liveCreated">—</b></div>
               <div class="k">Diffusion :</div> <div><b id="liveStarts">—</b> <span style="opacity:.6">→</span> <b id="liveEnds">—</b></div>
-              <div class="k">Severity :</div> <div><b id="liveSev">—</b></div>
+
+              <!-- ✅ Severity renommé en "Mode" (car chez toi c’est la même info) -->
+              <div class="k">Mode :</div> <div><b id="liveSev">—</b></div>
+
               <div class="k">Image :</div> <div><b id="liveImagePath">—</b></div>
             </div>
 
@@ -245,8 +276,8 @@
                     <select id="schedStartSel"></select>
                     <span class="hint">Format 24h</span>
                   </div>
-
                 </div>
+
                 <div>
                   <label>Heure fin</label>
 
@@ -258,7 +289,6 @@
                     <select id="schedEndSel"></select>
                     <span class="hint">Format 24h</span>
                   </div>
-
                 </div>
               </div>
 
@@ -274,11 +304,8 @@
                   <label><input type="checkbox" value="0" />Dim</label>
                 </div>
               </div>
-
             </div>
           </div>
-
-          <div class="hr"></div>
 
           <!-- Zone GitHub (cachée/affichée via bouton Paramètre) -->
           <div class="gh-zone" style="margin-top:12px">
@@ -343,7 +370,7 @@
           <div class="badge">
             <span>Dernière maj :</span> <b id="pUpdated">—</b>
             <span style="opacity:.5">•</span>
-            <span>Severity :</span> <b id="pSev">—</b>
+            <span>Mode :</span> <b id="pSev">—</b>
           </div>
           <div id="pTitle" style="margin-top:10px;font-weight:900;font-size:18px">—</div>
           <div id="pMsg" style="margin-top:6px;opacity:.85">—</div>
@@ -464,14 +491,11 @@
 
     function sync(sel, input){
       if (!sel || !input) return;
-      // init: input -> select
       const v = input.value || "";
       if (v) sel.value = v;
 
-      // select -> input
       sel.addEventListener("change", () => {
         input.value = sel.value;
-        // déclenche un event "input" pour que app.js réagisse si besoin
         input.dispatchEvent(new Event("input", { bubbles:true }));
         input.dispatchEvent(new Event("change", { bubbles:true }));
       });
@@ -484,11 +508,10 @@
       const endSel     = document.getElementById("schedEndSel");
       if (!startInput || !endInput || !startSel || !endSel) return;
 
-      const times = buildTimes(5); // pas de 5 minutes
+      const times = buildTimes(5);
       fillSelect(startSel, times);
       fillSelect(endSel, times);
 
-      // Valeurs par défaut si vide
       if (!startInput.value) startInput.value = "19:00";
       if (!endInput.value) endInput.value = "06:00";
 
