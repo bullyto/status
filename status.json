@@ -1,7 +1,7 @@
 {
-  "active": true,
-  "mode": "warning",
-  "last_update": "2026-01-01T18:20:29.698+01:00",
+  "active": false,
+  "mode": "none",
+  "last_update": "2026-01-01T18:23:04.790+01:00",
   "modes": {
     "info": {
       "title": "Test",
