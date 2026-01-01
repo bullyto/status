@@ -31,5 +31,37 @@
         "end": "06:00"
       }
     }
+  },
+  "presets": {
+    "incident": {
+      "title": "Incident",
+      "message": "Incident en cours. Merci de ta compréhension.",
+      "image": "images/incident.png",
+      "severity": "info"
+    },
+    "météo": {
+      "title": "Météo",
+      "message": "Conditions météo compliquées. Service possiblement ralenti.",
+      "image": "images/météo.png",
+      "severity": "info"
+    },
+    "panne": {
+      "title": "Panne",
+      "message": "Panne technique en cours. Service impacté.",
+      "image": "images/panne.png",
+      "severity": "info"
+    },
+    "sécurité": {
+      "title": "Sécurité",
+      "message": "Mesure de sécurité en cours. Service temporairement indisponible.",
+      "image": "images/sécurité.png",
+      "severity": "info"
+    },
+    "libre": {
+      "title": "",
+      "message": "",
+      "image": "images/panne.png",
+      "severity": "info"
+    }
   }
 }
