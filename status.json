@@ -1,12 +1,12 @@
 {
   "active": true,
-  "mode": "warning",
-  "last_update": "2026-01-01T14:23:42.545+01:00",
+  "mode": "info",
+  "last_update": "2026-01-01T14:31:15.535+01:00",
   "modes": {
     "info": {
-      "title": "Sécurité",
-      "message": "Mesure de sécurité en cours. Service temporairement indisponible.",
-      "image": "images/sécurité.png",
+      "title": "",
+      "message": "",
+      "image": "images/panne.png",
       "severity": "info",
       "ok_delay_seconds": 20
     },
@@ -18,8 +18,8 @@
       "block_order": true,
       "block_schedule": {
         "enabled": true,
-        "start": "15:24",
-        "end": "15:25",
+        "start": "15:06",
+        "end": "15:08",
         "days": [
           4
         ]
