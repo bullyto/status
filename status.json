@@ -1,7 +1,7 @@
 {
   "active": true,
-  "mode": "info",
-  "last_update": "2026-01-01T14:05:18.485+01:00",
+  "mode": "warning",
+  "last_update": "2026-01-01T14:07:00.024+01:00",
   "modes": {
     "info": {
       "title": "Sécurité",
@@ -11,23 +11,17 @@
       "ok_delay_seconds": 20
     },
     "warning": {
-      "title": "Incident",
-      "message": "Incident en cours. Merci de ta compréhension.",
-      "image": "images/incident.png",
+      "title": "Panne",
+      "message": "Panne technique en cours. Service impacté.",
+      "image": "images/panne.png",
       "severity": "warning",
       "block_order": true,
       "block_schedule": {
         "enabled": true,
-        "start": "14:15",
-        "end": "14:18",
+        "start": "15:06",
+        "end": "15:08",
         "days": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          0
+          4
         ]
       },
       "warning_click_message": "Ce n'est actuellement pas possible de commander."
