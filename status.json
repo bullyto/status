@@ -1,12 +1,12 @@
 {
   "active": true,
   "mode": "info",
-  "last_update": "2026-01-01T13:38:42.678+01:00",
+  "last_update": "2026-01-01T13:58:52.124+01:00",
   "modes": {
     "info": {
-      "title": "Panne",
-      "message": "Panne technique en cours. Service impacté.",
-      "image": "images/panne.png",
+      "title": "Sécurité",
+      "message": "Mesure de sécurité en cours. Service temporairement indisponible.",
+      "image": "images/sécurité.png",
       "severity": "info",
       "ok_delay_seconds": 20
     },
