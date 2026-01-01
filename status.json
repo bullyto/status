@@ -1,14 +1,14 @@
 {
-  "active": false,
-  "mode": "none",
-  "last_update": "",
+  "active": true,
+  "mode": "info",
+  "last_update": "2026-01-01T05:59:54.627+01:00",
   "modes": {
     "info": {
       "title": "Information",
       "message": "Service disponible. Petite info pour toi 🙂",
       "image": "images/panne.png",
       "severity": "info",
-      "ok_delay_seconds": 5
+      "ok_delay_seconds": 50
     },
     "warning": {
       "title": "Service momentanément indisponible",
