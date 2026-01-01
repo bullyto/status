@@ -1,7 +1,7 @@
 {
   "active": true,
   "mode": "warning",
-  "last_update": "2026-01-01T14:07:00.024+01:00",
+  "last_update": "2026-01-01T14:23:42.545+01:00",
   "modes": {
     "info": {
       "title": "Sécurité",
@@ -18,8 +18,8 @@
       "block_order": true,
       "block_schedule": {
         "enabled": true,
-        "start": "15:06",
-        "end": "15:08",
+        "start": "15:24",
+        "end": "15:25",
         "days": [
           4
         ]
