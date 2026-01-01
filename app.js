@@ -69,7 +69,7 @@ function setCheckedDays(days){
   Array.from(box.querySelectorAll("input[type=checkbox]")).forEach(c => c.checked = set.has(String(c.value)));
 }
 
-/** --------- AJOUT : helpers affichage --------- */
+/** --------- helpers affichage --------- */
 function safeText(elId, txt, fallback="—"){
   const el = $(elId);
   if(!el) return;
@@ -84,7 +84,6 @@ function safeImg(elId, src, fallback="images/panne.png"){
   el.src = s || fallback;
 }
 
-/** Essaie de lire différents noms possibles dans ton status.json (souple) */
 function pickFirst(obj, keys){
   for(const k of keys){
     if(obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
@@ -92,16 +91,12 @@ function pickFirst(obj, keys){
   return undefined;
 }
 
-/** Extrait le "cfg" courant (info/warning/ancien preset) du JSON en ligne */
 function getLiveCfg(data){
   const active = !!data.active;
   const mode = data.mode || "none";
   if(!active || !mode || mode === "none") return null;
 
-  // si mode standard
   if(data.modes && data.modes[mode]) return data.modes[mode];
-
-  // sinon mode "preset" (ancien)
   if(data.presets && data.presets[mode]) return data.presets[mode];
   if(data.modes && data.modes[mode]) return data.modes[mode];
 
@@ -171,6 +166,70 @@ function syncModePanels(){
   if(warningBox) warningBox.classList.toggle("ui-hide", mode !== "warning");
 }
 
+/** ✅ Publié en ligne : complet + ne met plus "—" inutilement */
+function renderLivePreview(data){
+  const active = !!data.active;
+  const mode = data.mode || "none";
+
+  safeText("liveActive", active ? "ACTIF" : "INACTIF");
+  safeText("liveMode", mode);
+  safeText("liveUpdated", data.last_update || "");
+
+  const cfg = getLiveCfg(data);
+
+  safeText("liveTitle", cfg?.title, "—");
+  safeText("liveMsg", cfg?.message, "—");
+  safeImg("liveImg", cfg?.image, "images/panne.png");
+
+  // "Severity" = Mode chez toi → on affiche severity si existe sinon mode
+  const sev = pickFirst(cfg, ["severity"]) || mode || "info";
+  safeText("liveSev", sev);
+
+  // Chemin image toujours visible
+  const imgPath = pickFirst(cfg, ["image","img","image_path","imagePath"]) || "images/panne.png";
+  safeText("liveImagePath", imgPath);
+
+  // Création / Diffusion (grâce aux champs qu’on va écrire à chaque publish)
+  const created = pickFirst(data, ["created_at","createdAt"]) ?? data.last_update ?? "";
+  safeText("liveCreated", created);
+
+  const starts = pickFirst(data, ["starts_at","startsAt"]) ?? pickFirst(data, ["published_at","publishedAt"]) ?? data.last_update ?? "";
+  const ends = pickFirst(data, ["ends_at","endsAt"]) ?? "";
+
+  safeText("liveStarts", starts);
+  safeText("liveEnds", ends ? ends : "—");
+
+  const extraEl = $("liveExtra");
+  if(extraEl){
+    if(active && mode === "warning"){
+      const clickMsg = data?.modes?.warning?.warning_click_message || "";
+      const sched = data?.modes?.warning?.block_schedule || {};
+      const schedTxt = sched?.enabled ? `Blocage plage ${sched.start || "—"} → ${sched.end || "—"}` : "Blocage 24/24";
+      extraEl.textContent = (clickMsg ? (clickMsg + " • ") : "") + schedTxt;
+    } else {
+      extraEl.textContent = "";
+    }
+  }
+}
+
+function renderPreview(data){
+  const active = getVal("active", "false") === "true";
+  const mode = getVal("mode", "none");
+
+  if ($("pActive")) $("pActive").textContent = active ? "ACTIF" : "INACTIF";
+  if ($("pMode")) $("pMode").textContent = mode;
+  if ($("pUpdated")) $("pUpdated").textContent = data.last_update || "";
+
+  const cfg = data.modes?.[mode] || {};
+
+  if ($("pTitle")) $("pTitle").textContent = cfg.title || "(titre)";
+  if ($("pMsg")) $("pMsg").textContent = cfg.message || "(message)";
+  if ($("pSev")) $("pSev").textContent = mode || "—";
+
+  const imgSrc = cfg.image ? cfg.image : "images/panne.png";
+  if ($("pImg")) $("pImg").src = imgSrc;
+}
+
 function setFormFromStatus(data){
   setVal("active", String(!!data.active));
 
@@ -213,95 +272,8 @@ function setFormFromStatus(data){
 
   syncModePanels();
 
-  // ✅ Brouillon temps réel
   renderPreview(buildUpdatedStatus(data));
-
-  // ✅ Publié en ligne (exact)
   renderLivePreview(data);
-}
-
-/** --------- MODIF : live = complet (image, texte, dates, diffusion...) --------- */
-function renderLivePreview(data){
-  const active = !!data.active;
-  const mode = data.mode || "none";
-
-  // Badge état/mode/maj
-  safeText("liveActive", active ? "ACTIF" : "INACTIF");
-  safeText("liveMode", mode);
-  safeText("liveUpdated", data.last_update || "");
-
-  const cfg = getLiveCfg(data);
-
-  // Titre/Message/Image
-  safeText("liveTitle", cfg?.title, "—");
-  safeText("liveMsg", cfg?.message, "—");
-  safeImg("liveImg", cfg?.image, "images/panne.png");
-
-  // Severity (si ton JSON en a)
-  const sev = pickFirst(cfg, ["severity"]) || (mode === "warning" ? "warning" : "info");
-  safeText("liveSev", sev);
-
-  // Chemin image (affiché)
-  safeText("liveImagePath", cfg?.image || "", "—");
-
-  // Création / Diffusion : on reste SOUPLE sur les noms de champs
-  // Si tu ajoutes plus tard : created_at / starts_at / ends_at (ou start/end) => ça s’affichera.
-  const created =
-    pickFirst(data, ["created_at","createdAt","creation_date","created"]) ??
-    pickFirst(cfg,  ["created_at","createdAt","creation_date","created"]);
-  safeText("liveCreated", created);
-
-  // Diffusion: priorité à un bloc "broadcast" ou "schedule" si tu en as un, sinon warning.block_schedule si mode warning
-  let starts =
-    pickFirst(data, ["starts_at","startsAt","start_at","startAt","start"]) ??
-    pickFirst(cfg,  ["starts_at","startsAt","start_at","startAt","start"]);
-
-  let ends =
-    pickFirst(data, ["ends_at","endsAt","end_at","endAt","end"]) ??
-    pickFirst(cfg,  ["ends_at","endsAt","end_at","endAt","end"]);
-
-  // si rien et warning => on affiche la plage horaire + jours (utile)
-  if((starts === undefined && ends === undefined) && mode === "warning"){
-    const bs = data?.modes?.warning?.block_schedule;
-    if(bs && bs.enabled){
-      starts = `Plage ${bs.start || "—"} → ${bs.end || "—"}`;
-      ends = `Jours ${Array.isArray(bs.days) ? bs.days.join(",") : "—"}`;
-    }
-  }
-
-  safeText("liveStarts", starts);
-  safeText("liveEnds", ends);
-
-  // Extra: petit rappel blocage si warning
-  const extraEl = $("liveExtra");
-  if(extraEl){
-    if(active && mode === "warning"){
-      const clickMsg = data?.modes?.warning?.warning_click_message || "";
-      const sched = data?.modes?.warning?.block_schedule || {};
-      const schedTxt = sched?.enabled ? `Blocage sur plage ${sched.start || "—"} → ${sched.end || "—"}` : "Blocage 24/24";
-      extraEl.textContent = (clickMsg ? (clickMsg + " • ") : "") + schedTxt;
-    } else {
-      extraEl.textContent = "";
-    }
-  }
-}
-
-function renderPreview(data){
-  const active = getVal("active", "false") === "true";
-  const mode = getVal("mode", "none");
-
-  if ($("pActive")) $("pActive").textContent = active ? "ACTIF" : "INACTIF";
-  if ($("pMode")) $("pMode").textContent = mode;
-  if ($("pUpdated")) $("pUpdated").textContent = data.last_update || "";
-
-  const cfg = data.modes?.[mode] || {};
-
-  if ($("pTitle")) $("pTitle").textContent = cfg.title || "(titre)";
-  if ($("pMsg")) $("pMsg").textContent = cfg.message || "(message)";
-  if ($("pSev")) $("pSev").textContent = (mode === "warning") ? "warning" : "info";
-
-  const imgSrc = cfg.image ? cfg.image : "images/panne.png";
-  if ($("pImg")) $("pImg").src = imgSrc;
 }
 
 function buildUpdatedStatus(current){
@@ -319,6 +291,16 @@ function buildUpdatedStatus(current){
   data.active = active;
   data.mode = mode;
   data.last_update = nowIsoParisish();
+
+  // ✅ AJOUT: métadonnées pour "Création / Diffusion"
+  if(!data.created_at) data.created_at = data.last_update;   // une seule fois
+  data.published_at = data.last_update;                      // à chaque publication
+  if(active && mode !== "none"){
+    if(!data.starts_at) data.starts_at = data.last_update;   // diffusion “démarre maintenant”
+    if(data.ends_at === undefined) data.ends_at = "";        // vide = pas de fin fixe
+  } else {
+    if(data.ends_at === undefined) data.ends_at = "";
+  }
 
   if (!data.modes) data.modes = {};
   if (!data.presets) data.presets = {};
@@ -434,14 +416,12 @@ function startClock(){
   setInterval(tick, 1000);
 }
 
-/** --------- AJOUT : recharge "publié en ligne" (exact) --------- */
 async function refreshOnlinePublished(){
   try{
     const raw = await loadStatus();
     const normalized = normalizeStatus(raw);
     renderLivePreview(normalized);
   }catch(e){
-    // On n'affiche pas une grosse erreur ici, juste un toast discret si besoin
     console.warn("refreshOnlinePublished failed", e);
   }
 }
@@ -530,10 +510,8 @@ async function main(){
       toast("Publication sur GitHub...");
       await githubPutFile({owner, repo, path, branch, token, contentText, sha});
 
-      // ✅ on met à jour le brouillon courant
       current = updated;
 
-      // ✅ on force un refresh du "publié en ligne" (exact)
       toast("Vérification en ligne...");
       await refreshOnlinePublished();
 
@@ -544,7 +522,6 @@ async function main(){
     }
   });
 
-  // Petit refresh en ligne au démarrage (si cache SW)
   refreshOnlinePublished();
 }
 
