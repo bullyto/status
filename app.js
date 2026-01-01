@@ -35,17 +35,13 @@ async function loadStatus(){
   return await r.json();
 }
 
-/** token unifié : accepte gh_token_v1 (avec exp) OU gh_token (legacy) */
 function readTokenUnified(){
-  // 1) champ
   const fromInput = getVal("ghToken","").trim();
   if(fromInput) return fromInput;
 
-  // 2) legacy string
   const legacy = (localStorage.getItem("gh_token") || "").trim();
   if(legacy) return legacy;
 
-  // 3) v1 JSON avec exp
   try{
     const raw = localStorage.getItem("gh_token_v1");
     if(!raw) return "";
@@ -73,57 +69,139 @@ function setCheckedDays(days){
   Array.from(box.querySelectorAll("input[type=checkbox]")).forEach(c => c.checked = set.has(String(c.value)));
 }
 
-function setFormFromStatus(data){
-  setVal("active", String(!!data.active));
-  setVal("mode", data.mode || "none");
+function normalizeStatus(raw){
+  const data = (window.structuredClone ? structuredClone(raw) : JSON.parse(JSON.stringify(raw)));
+  if(!data.modes) data.modes = {};
+  if(!data.presets) data.presets = {};
 
-  const m = data.modes || {};
-  const selected = getVal("mode", "none");
-  const cfg = m[selected] || {};
+  Object.keys(data.modes).forEach(k => {
+    if(k !== "info" && k !== "warning"){
+      if(!data.presets[k]) data.presets[k] = data.modes[k];
+    }
+  });
 
-  // Normalisation : seulement info / warning
-  const sev = (cfg.severity === "warning") ? "warning" : "info";
-  setVal("severity", sev);
+  if(!data.modes.info){
+    data.modes.info = { title:"Information", message:"", image:"images/panne.png", severity:"info", ok_delay_seconds:5 };
+  }
+  if(!data.modes.warning){
+    data.modes.warning = {
+      title:"Service momentanément indisponible",
+      message:"Impossible de commander pour le moment.",
+      image:"images/panne.png",
+      severity:"warning",
+      block_order:true,
+      warning_click_message:"Ce n'est actuellement pas possible de commander.",
+      block_schedule:{ enabled:false, days:[1,2,3,4,5,6,0], start:"19:00", end:"06:00" }
+    };
+  }
 
-  setVal("title", cfg.title || "");
-  setVal("message", cfg.message || "");
-  setVal("image", cfg.image || "");
+  const ensurePreset = (key, title, message, image) => {
+    if(!data.presets[key]){
+      data.presets[key] = { title, message, image, severity:"info" };
+    }
+  };
+  ensurePreset("incident","Incident","Incident en cours. Merci de ta compréhension.","images/incident.png");
+  ensurePreset("météo","Météo","Conditions météo compliquées. Service possiblement ralenti.","images/météo.png");
+  ensurePreset("panne","Panne","Panne technique en cours. Service impacté.","images/panne.png");
+  ensurePreset("sécurité","Sécurité","Mesure de sécurité en cours. Service temporairement indisponible.","images/sécurité.png");
+  if(!data.presets.libre) data.presets.libre = { title:"", message:"", image:"images/panne.png", severity:"info" };
 
-  // info
-  setVal("okDelay", String(cfg.ok_delay_seconds ?? 5));
+  return data;
+}
 
-  // warning
-  setVal("warningClickMsg", cfg.warning_click_message || "Ce n'est actuellement pas possible de commander.");
-  const sched = cfg.block_schedule || {};
-  setVal("schedEnabled", String(!!sched.enabled));
-  setVal("schedStart", sched.start || "19:00");
-  setVal("schedEnd", sched.end || "06:00");
-  setCheckedDays(sched.days || [1,2,3,4,5,6,0]);
+function fillPresetSelect(data){
+  const sel = $("preset");
+  if(!sel) return;
+  const presets = data.presets || {};
+  const keys = Object.keys(presets);
 
-  syncModePanels();
-  renderPreview(data);
+  const order = ["météo","incident","panne","sécurité","libre"];
+  const sorted = Array.from(new Set([...order, ...keys]));
+
+  sel.innerHTML = sorted
+    .filter(k => presets[k])
+    .map(k => `<option value="${k}">${k === "libre" ? "message libre" : k}</option>`)
+    .join("");
 }
 
 function syncModePanels(){
   const mode = getVal("mode","none");
-  const sev = (mode === "warning") ? "warning" : "info";
-  // On force la cohérence : mode=info => severity=info ; mode=warning => severity=warning
-  if($("severity")) setVal("severity", sev);
-
   const infoBox = $("infoBox");
   const warningBox = $("warningBox");
   if(infoBox) infoBox.classList.toggle("ui-hide", mode !== "info");
   if(warningBox) warningBox.classList.toggle("ui-hide", mode !== "warning");
 }
 
+function setFormFromStatus(data){
+  setVal("active", String(!!data.active));
+
+  let uiMode = "none";
+  let presetKey = "libre";
+  const rawMode = data.mode || "none";
+
+  if(rawMode === "info" || rawMode === "warning" || rawMode === "none"){
+    uiMode = rawMode;
+    presetKey = "libre";
+  } else {
+    presetKey = rawMode;
+    const cfgOld = data.presets?.[presetKey] || data.modes?.[presetKey] || {};
+    const sev = String(cfgOld.severity || "info");
+    uiMode = (sev === "warning" || sev === "danger") ? "warning" : "info";
+  }
+
+  if(!data.active) uiMode = "none";
+
+  setVal("mode", uiMode);
+
+  fillPresetSelect(data);
+  if($("preset")) setVal("preset", presetKey);
+
+  const preset = data.presets?.[presetKey] || {};
+  setVal("title", preset.title || "");
+  setVal("message", preset.message || "");
+  setVal("image", preset.image || "");
+
+  const infoCfg = data.modes?.info || {};
+  setVal("okDelay", String(infoCfg.ok_delay_seconds ?? 5));
+
+  const warnCfg = data.modes?.warning || {};
+  setVal("warningClickMsg", warnCfg.warning_click_message || "Ce n'est actuellement pas possible de commander.");
+  const sched = warnCfg.block_schedule || {};
+  setVal("schedEnabled", String(!!sched.enabled));
+  setVal("schedStart", sched.start || "19:00");
+  setVal("schedEnd", sched.end || "06:00");
+  setCheckedDays(sched.days || [1,2,3,4,5,6,0]);
+
+  syncModePanels();
+  renderPreview(buildUpdatedStatus(data));
+  renderLivePreview(data);
+}
+
+function renderLivePreview(data){
+  const active = !!data.active;
+  const mode = data.mode || "none";
+
+  if($("liveActive")) $("liveActive").textContent = active ? "ACTIF" : "INACTIF";
+  if($("liveMode")) $("liveMode").textContent = mode;
+  if($("liveUpdated")) $("liveUpdated").textContent = data.last_update || "";
+
+  let cfg = null;
+  if(active && mode && mode !== "none"){
+    cfg = (data.modes && data.modes[mode]) ? data.modes[mode] : null;
+  }
+  if($("liveTitle")) $("liveTitle").textContent = cfg?.title || "—";
+  if($("liveMsg")) $("liveMsg").textContent = cfg?.message || "—";
+}
+
 function renderPreview(data){
   const active = getVal("active", "false") === "true";
   const mode = getVal("mode", "none");
-  const cfg = data.modes?.[mode] || {};
 
   if ($("pActive")) $("pActive").textContent = active ? "ACTIF" : "INACTIF";
   if ($("pMode")) $("pMode").textContent = mode;
   if ($("pUpdated")) $("pUpdated").textContent = data.last_update || "";
+
+  const cfg = data.modes?.[mode] || {};
 
   if ($("pTitle")) $("pTitle").textContent = cfg.title || "(titre)";
   if ($("pMsg")) $("pMsg").textContent = cfg.message || "(message)";
@@ -131,23 +209,6 @@ function renderPreview(data){
 
   const imgSrc = cfg.image ? cfg.image : "images/panne.png";
   if ($("pImg")) $("pImg").src = imgSrc;
-
-  const extra = $("pExtra");
-  if(extra){
-    if(mode === "info"){
-      const d = cfg.ok_delay_seconds ?? 5;
-      extra.textContent = active ? `Info : bouton OK débloqué après ${d}s.` : "";
-    } else if(mode === "warning"){
-      const sched = cfg.block_schedule || {};
-      const on = !!sched.enabled;
-      const days = (sched.days||[]).length ? sched.days.join(",") : "—";
-      extra.textContent = active
-        ? (on ? `Warning : blocage sur horaire (${sched.start||"?"}→${sched.end||"?"}), jours [${days}]` : "Warning : commande bloquée 24/24")
-        : "";
-    } else {
-      extra.textContent = "";
-    }
-  }
 }
 
 function buildUpdatedStatus(current){
@@ -155,15 +216,11 @@ function buildUpdatedStatus(current){
 
   const active = getVal("active", "false") === "true";
   let mode = getVal("mode", "none");
+  const presetKey = getVal("preset","libre");
 
-  // ✅ GARANTIE “retirer la pop-up”
   if (!active){
     mode = "none";
     setVal("mode", "none");
-    setVal("title", "");
-    setVal("message", "");
-    setVal("image", "");
-    setVal("severity", "info");
   }
 
   data.active = active;
@@ -171,48 +228,55 @@ function buildUpdatedStatus(current){
   data.last_update = nowIsoParisish();
 
   if (!data.modes) data.modes = {};
+  if (!data.presets) data.presets = {};
 
-  // On garantit l'existence des 2 modes côté JSON
-  if(!data.modes.info) data.modes.info = {};
-  if(!data.modes.warning) data.modes.warning = {};
+  if(!data.modes.info) data.modes.info = { title:"", message:"", image:"images/panne.png", severity:"info", ok_delay_seconds:5 };
+  if(!data.modes.warning) data.modes.warning = {
+    title:"", message:"", image:"images/panne.png", severity:"warning", block_order:true,
+    warning_click_message:"Ce n'est actuellement pas possible de commander.",
+    block_schedule:{ enabled:false, days:[1,2,3,4,5,6,0], start:"19:00", end:"06:00" }
+  };
+
+  const title = getVal("title","").trim();
+  const message = getVal("message","").trim();
+  const image = getVal("image","").trim();
+
+  if(presetKey && presetKey !== "libre"){
+    if(!data.presets[presetKey]) data.presets[presetKey] = {};
+    data.presets[presetKey].title = title;
+    data.presets[presetKey].message = message;
+    data.presets[presetKey].image = image;
+  }
 
   if (mode !== "none" && active){
-    if (!data.modes[mode]) data.modes[mode] = {};
+    if(mode === "info"){
+      data.modes.info.title = title;
+      data.modes.info.message = message;
+      data.modes.info.image = image;
+      data.modes.info.severity = "info";
+      const d = parseInt(getVal("okDelay","5"),10);
+      data.modes.info.ok_delay_seconds = Number.isFinite(d) && d >= 0 ? d : 5;
+    }
 
-    // champs communs
-    data.modes[mode].title = getVal("title", "").trim();
-    data.modes[mode].message = getVal("message", "").trim();
-    data.modes[mode].image = getVal("image", "").trim();
-
-    // cohérence : severity suit le mode
     if(mode === "warning"){
-      data.modes[mode].severity = "warning";
-      data.modes[mode].block_order = true;
-
-      data.modes[mode].warning_click_message = getVal("warningClickMsg","Ce n'est actuellement pas possible de commander.").trim();
-
-      const enabled = getVal("schedEnabled","false") === "true";
-      data.modes[mode].block_schedule = {
-        enabled,
+      data.modes.warning.title = title;
+      data.modes.warning.message = message;
+      data.modes.warning.image = image;
+      data.modes.warning.severity = "warning";
+      data.modes.warning.block_order = true;
+      data.modes.warning.warning_click_message = getVal("warningClickMsg","Ce n'est actuellement pas possible de commander.").trim();
+      data.modes.warning.block_schedule = {
+        enabled: getVal("schedEnabled","false") === "true",
         start: getVal("schedStart","19:00"),
         end: getVal("schedEnd","06:00"),
         days: getCheckedDays()
       };
-    } else {
-      data.modes[mode].severity = "info";
-      const d = parseInt(getVal("okDelay","5"),10);
-      data.modes[mode].ok_delay_seconds = Number.isFinite(d) && d >= 0 ? d : 5;
-      // info => pas de blocage commande
-      delete data.modes[mode].block_order;
-      delete data.modes[mode].block_schedule;
-      delete data.modes[mode].warning_click_message;
     }
   }
 
   return data;
 }
 
-// Base64 UTF-8 robuste
 function b64encodeUtf8(str){
   const bytes = new TextEncoder().encode(String(str));
   let bin = "";
@@ -280,20 +344,18 @@ function startClock(){
 async function main(){
   startClock();
 
-  // defaults robustes
   setVal("ghOwner", localStorage.getItem("gh_owner") || getVal("ghOwner","bullyto") || "bullyto");
   setVal("ghRepo", localStorage.getItem("gh_repo") || getVal("ghRepo","status") || "status");
   setVal("ghBranch", localStorage.getItem("gh_branch") || getVal("ghBranch","main") || "main");
   setVal("ghPath", localStorage.getItem("gh_path") || getVal("ghPath","status.json") || "status.json");
 
-  let current = await loadStatus();
+  let currentRaw = await loadStatus();
+  let current = normalizeStatus(currentRaw);
 
-  // On force la présence de 2 modes seulement dans le sélecteur
-  const modeOptions = ["info","warning"];
   if ($("mode")){
     $("mode").innerHTML =
       `<option value="none">Aucun (service OK)</option>` +
-      modeOptions.map(m => `<option value="${m}">${m}</option>`).join("");
+      ["info","warning"].map(m => `<option value="${m}">${m}</option>`).join("");
   }
 
   setFormFromStatus(current);
@@ -303,30 +365,18 @@ async function main(){
     renderPreview(buildUpdatedStatus(current));
   };
 
-  if ($("active")) $("active").addEventListener("change", rerender);
-  if ($("mode")) $("mode").addEventListener("change", ()=> {
-    // quand on change de mode, on recharge les champs depuis current.modes[mode]
-    const mode = getVal("mode","none");
-    const cfg = current.modes?.[mode] || {};
-    setVal("title", cfg.title || "");
-    setVal("message", cfg.message || "");
-    setVal("image", cfg.image || "");
-
-    if(mode === "info"){
-      setVal("okDelay", String(cfg.ok_delay_seconds ?? 5));
-    }
-    if(mode === "warning"){
-      setVal("warningClickMsg", cfg.warning_click_message || "Ce n'est actuellement pas possible de commander.");
-      const sched = cfg.block_schedule || {};
-      setVal("schedEnabled", String(!!sched.enabled));
-      setVal("schedStart", sched.start || "19:00");
-      setVal("schedEnd", sched.end || "06:00");
-      setCheckedDays(sched.days || [1,2,3,4,5,6,0]);
-    }
+  if($("preset")) $("preset").addEventListener("change", ()=>{
+    const key = getVal("preset","libre");
+    const p = current.presets?.[key] || {};
+    setVal("title", p.title || "");
+    setVal("message", p.message || "");
+    setVal("image", p.image || "");
     rerender();
   });
 
-  // champs communs + champs spécifiques
+  if ($("active")) $("active").addEventListener("change", rerender);
+  if ($("mode")) $("mode").addEventListener("change", ()=> { syncModePanels(); rerender(); });
+
   ["title","message","image","okDelay","schedEnabled","schedStart","schedEnd","warningClickMsg"].forEach(id => {
     const el = $(id);
     if(el) el.addEventListener("input", rerender);
@@ -334,11 +384,10 @@ async function main(){
   });
   if($("schedDays")) $("schedDays").addEventListener("change", rerender);
 
-  // Sauvegarde legacy optionnelle (si tu l'utilises encore)
   if ($("btnSaveToken")) $("btnSaveToken").addEventListener("click", ()=>{
     const token = readTokenUnified();
     if(!token){ toast("Token vide."); return; }
-    localStorage.setItem("gh_token", token); // garde compat
+    localStorage.setItem("gh_token", token);
     toast("Token enregistré sur ce téléphone.");
   });
   if ($("btnClearToken")) $("btnClearToken").addEventListener("click", ()=>{
@@ -377,6 +426,7 @@ async function main(){
       await githubPutFile({owner, repo, path, branch, token, contentText, sha});
 
       current = updated;
+      renderLivePreview(current);
       toast("Publié ✅");
     } catch(err){
       console.error(err);

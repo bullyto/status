@@ -72,14 +72,12 @@
               <label>Titre</label>
               <input id="title" placeholder="Ex: Info importante / Service indisponible" />
             </div>
-            <div>
-              <label>Niveau</label>
-              <select id="severity">
-                <option value="info">info</option>
-                <option value="warning">warning</option>
-              </select>
-              <div class="hint">Seulement 2 niveaux : <b>info</b> (OK après 5s) ou <b>warning</b> (commande bloquée).</div>
-            </div>
+            
+<div>
+  <label>Message pré‑enregistré</label>
+  <select id="preset"></select>
+</div>
+
           </div>
 
           <div style="margin-top:10px">
@@ -102,7 +100,7 @@
                 <div>
                   <label>Délai avant “OK j’ai compris”</label>
                   <input id="okDelay" type="number" min="0" step="1" placeholder="5" />
-                  <div class="hint">Ex: 5 = le bouton OK est bloqué 5 secondes avant de fermer le pop-up.</div>
+                  
                 </div>
                 <div>
                   <label>(auto)</label>
@@ -124,7 +122,7 @@
                     <option value="false">Non (bloque tout le temps)</option>
                     <option value="true">Oui (bloque seulement sur plage horaire)</option>
                   </select>
-                  <div class="hint">Si “Oui”, tu choisis jours + heures. Si “Non”, la commande est bloquée 24/24.</div>
+                  
                 </div>
                 <div>
                   <label>Message si clic sur “OK j’ai compris”</label>
