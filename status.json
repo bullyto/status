@@ -1,14 +1,14 @@
 {
   "active": true,
-  "mode": "warning",
-  "last_update": "2026-01-01T06:06:46.526+01:00",
+  "mode": "info",
+  "last_update": "2026-01-01T13:08:08.086+01:00",
   "modes": {
     "info": {
-      "title": "Sécurité",
-      "message": "Mesure de sécurité en cours. Service temporairement indisponible.",
-      "image": "images/sécurité.png",
+      "title": "",
+      "message": "",
+      "image": "images/panne.png",
       "severity": "info",
-      "ok_delay_seconds": 50
+      "ok_delay_seconds": 15
     },
     "warning": {
       "title": "Météo",
