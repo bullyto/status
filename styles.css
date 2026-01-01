@@ -1,95 +1,92 @@
 :root{
   --bg:#0a121c;
   --card:#0f1b2a;
-  --text:#eaf2ff;
-  --muted:rgba(234,242,255,.72);
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.72);
   --line:rgba(255,255,255,.12);
-  --accent:#7abeff;
-  --danger:#ff6b6b;
-  --warning:#ffd166;
-  --ok:#3ddc97;
-  --radius:18px;
+  --ok:#22c55e;
+  --warn:#f59e0b;
+  --danger:#ef4444;
+  --btn:#1f2f46;
+  --btn2:#162234;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: radial-gradient(1200px 600px at 20% 0%, rgba(122,190,255,.18), transparent 55%),
-              radial-gradient(900px 700px at 100% 10%, rgba(61,220,151,.12), transparent 60%),
-              var(--bg);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica,Arial;
+  background:radial-gradient(1200px 700px at 20% 0%, rgba(56,189,248,.12), transparent 60%),
+             radial-gradient(900px 600px at 100% 10%, rgba(34,197,94,.10), transparent 55%),
+             var(--bg);
   color:var(--text);
 }
-.wrap{max-width:980px;margin:0 auto;padding:18px}
-.top{
-  display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap
-}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 14px 24px}
+.top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
 .brand{display:flex;gap:12px;align-items:center}
-.brand img{width:44px;height:44px;border-radius:14px;border:1px solid var(--line)}
-h1{font-size:18px;margin:0}
-.small{color:var(--muted);font-size:13px;margin-top:2px}
-.grid{
-  margin-top:16px;
-  display:grid;
-  grid-template-columns: 1.1fr .9fr;
-  gap:14px;
+.brand img{width:42px;height:42px;border-radius:10px;border:1px solid var(--line)}
+h1{margin:0;font-size:18px;letter-spacing:.2px}
+.small{font-size:12px;color:var(--muted);line-height:1.35}
+.inline{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.10)}
+.badge{
+  display:flex;gap:8px;align-items:center;
+  padding:10px 12px;border-radius:14px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--line);
 }
-@media (max-width: 900px){
-  .grid{grid-template-columns: 1fr}
-}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
 .card{
-  background: rgba(15,27,42,.78);
+  background:rgba(15,27,42,.78);
   border:1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: 0 14px 40px rgba(0,0,0,.35);
+  border-radius:18px;
   overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,.22);
 }
-.card .hd{padding:14px 14px 0}
-.card .bd{padding:14px}
-.hr{height:1px;background:var(--line);margin:12px 0}
-.row{display:grid;grid-template-columns: 1fr 1fr; gap:10px}
-@media (max-width: 520px){
-  .row{grid-template-columns: 1fr}
-}
-label{display:block;font-size:13px;color:var(--muted);margin:0 0 6px}
-select,input,textarea{
+.hd{padding:12px 14px;border-bottom:1px solid var(--line)}
+.bd{padding:14px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+input,select,textarea,button{
   width:100%;
-  padding:12px 12px;
-  border-radius: 14px;
-  border:1px solid var(--line);
-  background: rgba(10,18,28,.6);
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
   color:var(--text);
+  border-radius:12px;
+  padding:10px 10px;
   outline:none;
 }
-textarea{min-height:92px;resize:vertical}
+textarea{min-height:96px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.row{grid-template-columns:1fr}}
+.hr{height:1px;background:rgba(255,255,255,.10);margin:12px 0}
 .btns{display:flex;gap:10px;flex-wrap:wrap}
-button{
-  border:0;
-  cursor:pointer;
-  padding:12px 14px;
-  border-radius: 14px;
-  font-weight:800;
-  color:#071019;
-  background: var(--accent);
-}
-button.secondary{background: rgba(255,255,255,.12); color:var(--text); border:1px solid var(--line)}
-button.danger{background: var(--danger); color:#180607}
-button.ok{background: var(--ok); color:#06140f}
-.badge{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:8px 10px;border-radius:999px;border:1px solid var(--line);
-  background: rgba(10,18,28,.55);
-  font-size:12px;color:var(--muted)
-}
-.badge b{color:var(--text)}
-.preview{
-  display:flex;flex-direction:column;gap:12px
-}
-.preview img{width:100%;border-radius:16px;border:1px solid var(--line);background:#09121b}
-.note{font-size:13px;color:var(--muted);line-height:1.35}
-code.inline{background:rgba(255,255,255,.09);padding:2px 6px;border-radius:8px;border:1px solid var(--line)}
+.btns button{flex:1;min-width:160px;cursor:pointer}
+button{background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05))}
+button:hover{border-color:rgba(255,255,255,.22)}
+button.ok{border-color:rgba(34,197,94,.35)}
+button.secondary{background:rgba(255,255,255,.04)}
+button.danger{border-color:rgba(239,68,68,.35)}
 .toast{
   position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
-  background:rgba(15,27,42,.9);border:1px solid var(--line);color:var(--text);
-  padding:10px 12px;border-radius:999px;display:none;z-index:999999
+  background:rgba(0,0,0,.82);
+  color:white;
+  padding:10px 14px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  display:none;
+  max-width:min(92vw,680px);
+  z-index:9999999;
 }
+.toast.show{display:block}
+.preview img{width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.10)}
+.hint{font-size:12px; opacity:.72; margin-top:6px; line-height:1.25;}
+.pill{
+  display:inline-flex;gap:8px;align-items:center;
+  padding:7px 10px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  font-size:12px;color:var(--muted)
+}
+.weekdays{display:flex;flex-wrap:wrap;gap:8px}
+.weekdays label{display:flex;gap:8px;align-items:center;margin:0;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);cursor:pointer}
+.weekdays input{width:auto}
+.ui-hide{display:none !important;}

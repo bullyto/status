@@ -12,18 +12,12 @@
   <link rel="stylesheet" href="./styles.css" />
 
   <style>
-    .ui-hide { display:none !important; }
-
     /* Cache les boutons pré-programmés (mais ils existent toujours) */
-    #btnServiceOK,
-    #btnPreviewPopup,
-    #btnDownload { display:none !important; }
+    #btnServiceOK, #btnPreviewPopup, #btnDownload { display:none !important; }
 
     /* Zone GitHub masquée par défaut, affichable via bouton Paramètre */
     .gh-zone { display:none; }
     .gh-zone.is-open { display:block; }
-
-    .hint { font-size:12px; opacity:.72; margin-top:6px; line-height:1.25; }
   </style>
 </head>
 
@@ -35,8 +29,12 @@
         <div>
           <h1>Apéro Status Admin</h1>
           <div class="small">
-            Pilote <code class="inline">status.json</code> (panne, incident, météo, sécurité)
+            Pilote <code class="inline">status.json</code> (info / blocage commande)
             et publie directement sur APERO DE NUIT 66® et APERO CATALAN®.
+          </div>
+          <div style="margin-top:8px; display:flex; gap:10px; flex-wrap:wrap">
+            <span class="pill">🕒 <b id="clock">—</b></span>
+            <span class="pill">📅 <b id="today">—</b></span>
           </div>
         </div>
       </div>
@@ -62,7 +60,7 @@
               </select>
             </div>
             <div>
-              <label>Situation</label>
+              <label>Mode</label>
               <select id="mode"></select>
             </div>
           </div>
@@ -72,15 +70,15 @@
           <div class="row">
             <div>
               <label>Titre</label>
-              <input id="title" placeholder="Ex: Service temporairement suspendu" />
+              <input id="title" placeholder="Ex: Info importante / Service indisponible" />
             </div>
             <div>
               <label>Niveau</label>
               <select id="severity">
                 <option value="info">info</option>
                 <option value="warning">warning</option>
-                <option value="danger">danger</option>
               </select>
+              <div class="hint">Seulement 2 niveaux : <b>info</b> (OK après 5s) ou <b>warning</b> (commande bloquée).</div>
             </div>
           </div>
 
@@ -90,17 +88,74 @@
           </div>
 
           <div style="margin-top:10px">
-            <label>Image (chemin local dans le dépôt status)</label>
+            <label>Image (chemin relatif)</label>
             <input id="image" placeholder="images/panne.png" />
           </div>
 
           <div class="hr"></div>
 
-          <!-- Boutons techniques (présents mais cachés) -->
-          <div class="btns">
-            <button class="ok" id="btnServiceOK">Préparer “service OK”</button>
-            <button class="secondary" id="btnPreviewPopup">Prévisualiser le pop-up</button>
-            <button id="btnDownload">Télécharger status.json</button>
+          <!-- Réglage mode INFO -->
+          <div id="infoBox" class="card" style="border-radius:14px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.10); box-shadow:none;">
+            <div class="bd" style="padding:12px">
+              <div style="font-weight:800; margin-bottom:8px;">Mode info</div>
+              <div class="row">
+                <div>
+                  <label>Délai avant “OK j’ai compris”</label>
+                  <input id="okDelay" type="number" min="0" step="1" placeholder="5" />
+                  <div class="hint">Ex: 5 = le bouton OK est bloqué 5 secondes avant de fermer le pop-up.</div>
+                </div>
+                <div>
+                  <label>(auto)</label>
+                  <input disabled value="Le pop-up se ferme ensuite et la commande reste possible." />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Réglage mode WARNING -->
+          <div id="warningBox" class="card ui-hide" style="margin-top:10px; border-radius:14px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.10); box-shadow:none;">
+            <div class="bd" style="padding:12px">
+              <div style="font-weight:800; margin-bottom:8px;">Mode warning (blocage commande)</div>
+
+              <div class="row">
+                <div>
+                  <label>Activer un horaire de blocage</label>
+                  <select id="schedEnabled">
+                    <option value="false">Non (bloque tout le temps)</option>
+                    <option value="true">Oui (bloque seulement sur plage horaire)</option>
+                  </select>
+                  <div class="hint">Si “Oui”, tu choisis jours + heures. Si “Non”, la commande est bloquée 24/24.</div>
+                </div>
+                <div>
+                  <label>Message si clic sur “OK j’ai compris”</label>
+                  <input id="warningClickMsg" placeholder="Impossible de commander pour le moment." />
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:10px">
+                <div>
+                  <label>Heure début</label>
+                  <input id="schedStart" type="time" value="19:00" />
+                </div>
+                <div>
+                  <label>Heure fin</label>
+                  <input id="schedEnd" type="time" value="06:00" />
+                </div>
+              </div>
+
+              <div style="margin-top:10px">
+                <label>Jours</label>
+                <div class="weekdays" id="schedDays">
+                  <label><input type="checkbox" value="1" />Lun</label>
+                  <label><input type="checkbox" value="2" />Mar</label>
+                  <label><input type="checkbox" value="3" />Mer</label>
+                  <label><input type="checkbox" value="4" />Jeu</label>
+                  <label><input type="checkbox" value="5" />Ven</label>
+                  <label><input type="checkbox" value="6" />Sam</label>
+                  <label><input type="checkbox" value="0" />Dim</label>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="hr"></div>
@@ -130,7 +185,7 @@
               <label>Token GitHub</label>
               <input id="ghToken" type="password" autocomplete="off" placeholder="ghp_..." />
               <div class="hint">
-                Stocké en local sur ce téléphone (localStorage) avec expiration automatique (6 mois).
+                Stocké en local sur ce téléphone avec expiration automatique (6 mois).
                 <br><span id="tokenStatus" style="opacity:.9">—</span>
               </div>
             </div>
@@ -164,29 +219,18 @@
           </div>
           <div id="pTitle" style="margin-top:10px;font-weight:900;font-size:18px">—</div>
           <div id="pMsg" style="margin-top:6px;opacity:.85">—</div>
+          <div id="pExtra" class="small" style="margin-top:10px; opacity:.8"></div>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- Preview overlay -->
-  <div id="overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:999999; align-items:center; justify-content:center; padding:16px;">
-    <div style="max-width:520px; width:100%; background:#111; border:1px solid rgba(255,255,255,.12); border-radius:16px; overflow:hidden;">
-      <img id="overlayImg" alt="" style="width:100%; display:block;">
-      <div style="padding:14px 14px 16px;">
-        <div id="overlayTitle" style="font-size:18px; font-weight:800; margin-bottom:6px;"></div>
-        <div id="overlayMsg" style="font-size:14px; line-height:1.35;"></div>
-        <button id="overlayBtn" style="margin-top:12px; width:100%;">OK</button>
-      </div>
-    </div>
-  </div>
-
+  <!-- Toast -->
   <div id="toast" class="toast"></div>
 
-  <!-- Ton app existante -->
   <script src="./app.js"></script>
 
-  <!-- ✅ Correctifs : toggle Paramètre + token localStorage 6 mois + preview hide si inactif -->
+  <!-- Token localStorage 6 mois + toggle Paramètre -->
   <script>
   (function(){
     const LS_KEY = "gh_token_v1"; // JSON { token: string, exp: number }
@@ -207,7 +251,6 @@
         if (!raw) return null;
         const obj = JSON.parse(raw);
         if (!obj || typeof obj.token !== "string" || typeof obj.exp !== "number") return null;
-
         if (Date.now() > obj.exp) {
           localStorage.removeItem(LS_KEY);
           return null;
@@ -224,26 +267,13 @@
       return obj;
     }
 
-    function clearToken(){
-      localStorage.removeItem(LS_KEY);
-    }
+    function clearToken(){ localStorage.removeItem(LS_KEY); }
 
     function setTokenStatus(obj){
       const s = document.getElementById("tokenStatus");
       if (!s) return;
-      if (!obj) {
-        s.textContent = "Aucun token enregistré.";
-      } else {
-        const expTxt = new Date(obj.exp).toLocaleString("fr-FR");
-        s.textContent = "Token enregistré ✅ (expire le " + expTxt + ")";
-      }
-    }
-
-    function syncPreviewVisibility(){
-      const activeSel = document.getElementById("active");
-      const previewCard = document.querySelector("section.card.preview");
-      if (!activeSel || !previewCard) return;
-      previewCard.style.display = (activeSel.value === "true") ? "" : "none";
+      if (!obj) s.textContent = "Aucun token enregistré.";
+      else s.textContent = "Token enregistré ✅ (expire le " + new Date(obj.exp).toLocaleString("fr-FR") + ")";
     }
 
     function init(){
@@ -252,62 +282,37 @@
       const input = document.getElementById("ghToken");
       const btnSave = document.getElementById("btnSaveToken");
       const btnClear = document.getElementById("btnClearToken");
-      const activeSel = document.getElementById("active");
 
-      // Toggle Paramètre
-      if (btnToggle && ghZone) {
-        btnToggle.addEventListener("click", () => {
-          ghZone.classList.toggle("is-open");
-        });
-      }
+      if (btnToggle && ghZone) btnToggle.addEventListener("click", () => ghZone.classList.toggle("is-open"));
 
-      // Remplissage auto si token valide
       const stored = readToken();
       if (input && stored) input.value = stored.token;
       setTokenStatus(stored);
 
-      // Enregistrer
-      if (btnSave && input) {
-        btnSave.addEventListener("click", () => {
-          const val = (input.value || "").trim();
-          if (!val) {
-            toast("Token vide : rien enregistré.");
-            return;
-          }
-          const obj = saveToken(val);
-          setTokenStatus(obj);
-          toast("Token enregistré (6 mois) ✅");
-        });
-      }
+      if (btnSave && input) btnSave.addEventListener("click", () => {
+        const val = (input.value || "").trim();
+        if (!val) return toast("Token vide : rien enregistré.");
+        const obj = saveToken(val);
+        setTokenStatus(obj);
+        toast("Token enregistré (6 mois) ✅");
+      });
 
-      // Supprimer
-      if (btnClear && input) {
-        btnClear.addEventListener("click", () => {
-          clearToken();
-          input.value = "";
-          setTokenStatus(null);
-          toast("Token supprimé ✅");
-        });
-      }
-
-      // Aperçu caché quand inactif
-      if (activeSel) activeSel.addEventListener("change", syncPreviewVisibility);
-      syncPreviewVisibility();
+      if (btnClear && input) btnClear.addEventListener("click", () => {
+        clearToken();
+        input.value = "";
+        setTokenStatus(null);
+        toast("Token supprimé ✅");
+      });
     }
 
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", init);
-    } else {
-      init();
-    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+    else init();
   })();
   </script>
 
   <script>
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js");
-    });
+    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
   }
   </script>
 </body>

@@ -1,31 +1,35 @@
 {
   "active": false,
   "mode": "none",
-  "last_update": "2026-01-01T01:17:12.881+01:00",
+  "last_update": "",
   "modes": {
-    "panne": {
-      "title": "Service temporairement suspendu",
-      "message": "Suite à une panne / maintenance véhicule, le service est momentanément interrompu. Merci pour votre compréhension.",
+    "info": {
+      "title": "Information",
+      "message": "Service disponible. Petite info pour toi 🙂",
       "image": "images/panne.png",
-      "severity": "warning"
+      "severity": "info",
+      "ok_delay_seconds": 5
     },
-    "incident": {
-      "title": "Service temporairement suspendu",
-      "message": "Une situation imprévue nous oblige à suspendre temporairement le service. Merci pour votre compréhension.",
-      "image": "images/incident.png",
-      "severity": "info"
-    },
-    "meteo": {
-      "title": "Service suspendu pour notre sécurité",
-      "message": "Les conditions météo rendent la circulation trop dangereuse. Le service est suspendu temporairement.",
-      "image": "https://raw.githubusercontent.com/bullyto/status/main/images/meteo.png",
-      "severity": "info"
-    },
-    "securite_routiere": {
-      "title": "Service suspendu temporairement",
-      "message": "Service temporairement suspendu entre 23h30 et 00h30.\n\nBonne année à tous 🎉🎉😁",
-      "image": "https://image.noelshack.com/fichiers/2025/01/3/1767212433-file-00000000335c7243a70e57ebbd80546c-1.jpg",
-      "severity": "info"
+    "warning": {
+      "title": "Service momentanément indisponible",
+      "message": "Impossible de commander pour le moment.",
+      "image": "images/panne.png",
+      "severity": "warning",
+      "block_order": true,
+      "block_schedule": {
+        "enabled": false,
+        "days": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          0
+        ],
+        "start": "19:00",
+        "end": "06:00"
+      }
     }
   }
 }
