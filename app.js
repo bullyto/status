@@ -69,6 +69,45 @@ function setCheckedDays(days){
   Array.from(box.querySelectorAll("input[type=checkbox]")).forEach(c => c.checked = set.has(String(c.value)));
 }
 
+/** --------- AJOUT : helpers affichage --------- */
+function safeText(elId, txt, fallback="—"){
+  const el = $(elId);
+  if(!el) return;
+  const t = (txt === null || txt === undefined) ? "" : String(txt);
+  el.textContent = t.trim() ? t : fallback;
+}
+
+function safeImg(elId, src, fallback="images/panne.png"){
+  const el = $(elId);
+  if(!el) return;
+  const s = (src === null || src === undefined) ? "" : String(src).trim();
+  el.src = s || fallback;
+}
+
+/** Essaie de lire différents noms possibles dans ton status.json (souple) */
+function pickFirst(obj, keys){
+  for(const k of keys){
+    if(obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
+  }
+  return undefined;
+}
+
+/** Extrait le "cfg" courant (info/warning/ancien preset) du JSON en ligne */
+function getLiveCfg(data){
+  const active = !!data.active;
+  const mode = data.mode || "none";
+  if(!active || !mode || mode === "none") return null;
+
+  // si mode standard
+  if(data.modes && data.modes[mode]) return data.modes[mode];
+
+  // sinon mode "preset" (ancien)
+  if(data.presets && data.presets[mode]) return data.presets[mode];
+  if(data.modes && data.modes[mode]) return data.modes[mode];
+
+  return null;
+}
+
 function normalizeStatus(raw){
   const data = (window.structuredClone ? structuredClone(raw) : JSON.parse(JSON.stringify(raw)));
   if(!data.modes) data.modes = {};
@@ -173,24 +212,78 @@ function setFormFromStatus(data){
   setCheckedDays(sched.days || [1,2,3,4,5,6,0]);
 
   syncModePanels();
+
+  // ✅ Brouillon temps réel
   renderPreview(buildUpdatedStatus(data));
+
+  // ✅ Publié en ligne (exact)
   renderLivePreview(data);
 }
 
+/** --------- MODIF : live = complet (image, texte, dates, diffusion...) --------- */
 function renderLivePreview(data){
   const active = !!data.active;
   const mode = data.mode || "none";
 
-  if($("liveActive")) $("liveActive").textContent = active ? "ACTIF" : "INACTIF";
-  if($("liveMode")) $("liveMode").textContent = mode;
-  if($("liveUpdated")) $("liveUpdated").textContent = data.last_update || "";
+  // Badge état/mode/maj
+  safeText("liveActive", active ? "ACTIF" : "INACTIF");
+  safeText("liveMode", mode);
+  safeText("liveUpdated", data.last_update || "");
 
-  let cfg = null;
-  if(active && mode && mode !== "none"){
-    cfg = (data.modes && data.modes[mode]) ? data.modes[mode] : null;
+  const cfg = getLiveCfg(data);
+
+  // Titre/Message/Image
+  safeText("liveTitle", cfg?.title, "—");
+  safeText("liveMsg", cfg?.message, "—");
+  safeImg("liveImg", cfg?.image, "images/panne.png");
+
+  // Severity (si ton JSON en a)
+  const sev = pickFirst(cfg, ["severity"]) || (mode === "warning" ? "warning" : "info");
+  safeText("liveSev", sev);
+
+  // Chemin image (affiché)
+  safeText("liveImagePath", cfg?.image || "", "—");
+
+  // Création / Diffusion : on reste SOUPLE sur les noms de champs
+  // Si tu ajoutes plus tard : created_at / starts_at / ends_at (ou start/end) => ça s’affichera.
+  const created =
+    pickFirst(data, ["created_at","createdAt","creation_date","created"]) ??
+    pickFirst(cfg,  ["created_at","createdAt","creation_date","created"]);
+  safeText("liveCreated", created);
+
+  // Diffusion: priorité à un bloc "broadcast" ou "schedule" si tu en as un, sinon warning.block_schedule si mode warning
+  let starts =
+    pickFirst(data, ["starts_at","startsAt","start_at","startAt","start"]) ??
+    pickFirst(cfg,  ["starts_at","startsAt","start_at","startAt","start"]);
+
+  let ends =
+    pickFirst(data, ["ends_at","endsAt","end_at","endAt","end"]) ??
+    pickFirst(cfg,  ["ends_at","endsAt","end_at","endAt","end"]);
+
+  // si rien et warning => on affiche la plage horaire + jours (utile)
+  if((starts === undefined && ends === undefined) && mode === "warning"){
+    const bs = data?.modes?.warning?.block_schedule;
+    if(bs && bs.enabled){
+      starts = `Plage ${bs.start || "—"} → ${bs.end || "—"}`;
+      ends = `Jours ${Array.isArray(bs.days) ? bs.days.join(",") : "—"}`;
+    }
   }
-  if($("liveTitle")) $("liveTitle").textContent = cfg?.title || "—";
-  if($("liveMsg")) $("liveMsg").textContent = cfg?.message || "—";
+
+  safeText("liveStarts", starts);
+  safeText("liveEnds", ends);
+
+  // Extra: petit rappel blocage si warning
+  const extraEl = $("liveExtra");
+  if(extraEl){
+    if(active && mode === "warning"){
+      const clickMsg = data?.modes?.warning?.warning_click_message || "";
+      const sched = data?.modes?.warning?.block_schedule || {};
+      const schedTxt = sched?.enabled ? `Blocage sur plage ${sched.start || "—"} → ${sched.end || "—"}` : "Blocage 24/24";
+      extraEl.textContent = (clickMsg ? (clickMsg + " • ") : "") + schedTxt;
+    } else {
+      extraEl.textContent = "";
+    }
+  }
 }
 
 function renderPreview(data){
@@ -341,6 +434,18 @@ function startClock(){
   setInterval(tick, 1000);
 }
 
+/** --------- AJOUT : recharge "publié en ligne" (exact) --------- */
+async function refreshOnlinePublished(){
+  try{
+    const raw = await loadStatus();
+    const normalized = normalizeStatus(raw);
+    renderLivePreview(normalized);
+  }catch(e){
+    // On n'affiche pas une grosse erreur ici, juste un toast discret si besoin
+    console.warn("refreshOnlinePublished failed", e);
+  }
+}
+
 async function main(){
   startClock();
 
@@ -425,14 +530,22 @@ async function main(){
       toast("Publication sur GitHub...");
       await githubPutFile({owner, repo, path, branch, token, contentText, sha});
 
+      // ✅ on met à jour le brouillon courant
       current = updated;
-      renderLivePreview(current);
+
+      // ✅ on force un refresh du "publié en ligne" (exact)
+      toast("Vérification en ligne...");
+      await refreshOnlinePublished();
+
       toast("Publié ✅");
     } catch(err){
       console.error(err);
       toast("Erreur GitHub : " + (err?.message || err));
     }
   });
+
+  // Petit refresh en ligne au démarrage (si cache SW)
+  refreshOnlinePublished();
 }
 
 main();
