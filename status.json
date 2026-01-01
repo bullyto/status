@@ -1,7 +1,7 @@
 {
   "active": true,
   "mode": "warning",
-  "last_update": "2026-01-01T14:34:27.389+01:00",
+  "last_update": "2026-01-01T14:41:23.333+01:00",
   "modes": {
     "info": {
       "title": "",
@@ -11,15 +11,15 @@
       "ok_delay_seconds": 20
     },
     "warning": {
-      "title": "",
-      "message": "",
-      "image": "images/panne.png",
+      "title": "Incident",
+      "message": "Incident en cours. Merci de ta compréhension.",
+      "image": "images/incident.png",
       "severity": "warning",
       "block_order": true,
       "block_schedule": {
         "enabled": true,
-        "start": "15:35",
-        "end": "15:36",
+        "start": "15:43",
+        "end": "15:44",
         "days": [
           4
         ]
