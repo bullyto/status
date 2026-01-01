@@ -1,11 +1,11 @@
 {
   "active": true,
-  "mode": "warning",
-  "last_update": "2026-01-01T17:42:29.475+01:00",
+  "mode": "info",
+  "last_update": "2026-01-01T18:02:37.288+01:00",
   "modes": {
     "info": {
-      "title": "",
-      "message": "",
+      "title": "Test",
+      "message": "Message test",
       "image": "images/panne.png",
       "severity": "info",
       "ok_delay_seconds": 20
