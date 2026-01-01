@@ -1,7 +1,7 @@
 {
   "active": true,
-  "mode": "info",
-  "last_update": "2026-01-01T06:03:08.108+01:00",
+  "mode": "warning",
+  "last_update": "2026-01-01T06:06:46.526+01:00",
   "modes": {
     "info": {
       "title": "Sécurité",
@@ -11,15 +11,15 @@
       "ok_delay_seconds": 50
     },
     "warning": {
-      "title": "Service momentanément indisponible",
-      "message": "Impossible de commander pour le moment.",
-      "image": "images/panne.png",
+      "title": "Météo",
+      "message": "Conditions météo compliquées. Service possiblement ralenti.",
+      "image": "images/météo.png",
       "severity": "warning",
       "block_order": true,
       "block_schedule": {
         "enabled": false,
-        "start": "19:00",
-        "end": "06:00",
+        "start": "18:00",
+        "end": "10:00",
         "days": [
           1,
           2,
