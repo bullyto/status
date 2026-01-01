@@ -1,7 +1,7 @@
 {
   "active": true,
   "mode": "warning",
-  "last_update": "2026-01-01T14:46:32.211+01:00",
+  "last_update": "2026-01-01T15:01:08.221+01:00",
   "modes": {
     "info": {
       "title": "",
@@ -11,15 +11,15 @@
       "ok_delay_seconds": 20
     },
     "warning": {
-      "title": "Météo",
-      "message": "Conditions météo compliquées. Service possiblement ralenti.",
-      "image": "images/météo.png",
+      "title": "Panne",
+      "message": "Panne technique en cours. Service impacté.",
+      "image": "images/panne.png",
       "severity": "warning",
       "block_order": true,
       "block_schedule": {
         "enabled": true,
-        "start": "15:49",
-        "end": "15:51",
+        "start": "16:00",
+        "end": "16:10",
         "days": [
           4
         ]
